@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { formatWeekLabel } from "@/components/timetable/format";
 import { Icon } from "@/components/ui/icon";
+import { UiLink } from "@/components/ui/link";
 import { PublicFooter, PublicHeader } from "@/components/site/public-chrome";
 import {
   getActiveWeekContext,
@@ -211,10 +212,10 @@ export default async function TimetableClassSelectorPage({
               );
             })}
 
-            <p className="text-xs text-zinc-400">
-              <Link href="/tkb" className="hover:underline">
+            <p className="no-print text-xs text-zinc-400">
+              <UiLink variant="muted" href="/tkb" className="text-xs">
                 ← Xem tất cả các lớp
-              </Link>
+              </UiLink>
             </p>
           </section>
         ) : (

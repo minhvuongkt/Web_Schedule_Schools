@@ -13,6 +13,7 @@ import { ErrorBanner } from "@/components/leadership/ErrorBanner";
 import { VersionList } from "@/components/leadership/VersionList";
 import { WeekSelector } from "@/components/leadership/WeekSelector";
 import { WorkloadTable } from "@/components/leadership/WorkloadTable";
+import { AppShell } from "@/components/site/app-shell";
 import { requireUser } from "@/server/auth/session";
 import { can } from "@/server/domain/roles";
 
@@ -85,25 +86,15 @@ export default async function LeadershipDashboardPage({
   const canPublish = can(user.role, "timetable:publish");
 
   return (
-    <main className="flex-1">
+    <AppShell page="Ban giám hiệu" user={user}>
       <div className="mx-auto w-full max-w-6xl px-4 py-6">
         <header className="mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                Ban giám hiệu
-              </h1>
-              <p className="mt-1 text-sm text-zinc-600">
-                Tổng quan tải trọng giáo viên và quy trình thời khóa biểu toàn trường.
-              </p>
-            </div>
-            <Link
-              href="/"
-              className="text-sm font-medium text-zinc-500 hover:text-zinc-800 hover:underline"
-            >
-              Trang chủ
-            </Link>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Ban giám hiệu
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            Tổng quan tải trọng giáo viên và quy trình thời khóa biểu toàn trường.
+          </p>
         </header>
 
         {weeksError ? (
@@ -185,6 +176,6 @@ export default async function LeadershipDashboardPage({
           </Link>
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }

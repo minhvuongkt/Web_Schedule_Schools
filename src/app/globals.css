@@ -26,9 +26,13 @@
     opacity: 0;
     transform: translateY(14px);
   }
+  /* `none` (not translateY(0)): with fill-mode both the final value is
+     retained, and a retained transform would make this wrapper a containing
+     block for position:fixed descendants — breaking fixed overlays (modals,
+     toasts) whenever the page is scrolled. */
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: none;
   }
 }
 

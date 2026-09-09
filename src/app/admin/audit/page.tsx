@@ -10,7 +10,7 @@ import {
 } from "@/components/leadership/api";
 import { ErrorBanner } from "@/components/leadership/ErrorBanner";
 import { formatDateTimeVi } from "@/components/leadership/format";
-import { PageTopBar } from "@/components/leadership/PageTopBar";
+import { AppShell } from "@/components/site/app-shell";
 import { requireUser } from "@/server/auth/session";
 import { can } from "@/server/domain/roles";
 
@@ -128,26 +128,16 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50">
-      <PageTopBar displayName={user.displayName} role={user.role} />
-      <main className="flex-1">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6">
-          <header className="mb-6">
-            <nav className="mb-2 text-sm">
-              <Link
-                href="/admin"
-                className="inline-flex items-center gap-1.5 font-medium text-blue-700 hover:text-blue-900"
-              >
-                ← Xếp thời khóa biểu
-              </Link>
-            </nav>
-            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-              Nhật ký thao tác
-            </h1>
-            <p className="mt-1 text-sm text-zinc-600">
-              Các thao tác đã thực hiện trên hệ thống, mới nhất trước.
-            </p>
-          </header>
+    <AppShell page="Nhật ký thao tác" user={user}>
+      <div className="mx-auto w-full max-w-6xl px-4 py-6">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Nhật ký thao tác
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            Các thao tác đã thực hiện trên hệ thống, mới nhất trước.
+          </p>
+        </header>
 
           <form
             method="get"
@@ -184,7 +174,7 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
             {entityType ? (
               <Link
                 href="/admin/audit"
-                className="text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline"
+                className="text-sm font-medium text-zinc-500 underline-offset-2 transition-colors hover:text-zinc-800 hover:underline"
               >
                 Xóa lọc
               </Link>
@@ -298,13 +288,12 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
                 </div>
               </div>
             </>
-          ) : (
+           ) : (
             <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-600">
               Chưa có bản ghi nào khớp bộ lọc.
             </p>
           )}
         </div>
-      </main>
-    </div>
+    </AppShell>
   );
 }

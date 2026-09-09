@@ -37,13 +37,13 @@ export default async function ForbiddenPage({ searchParams }: PageProps) {
         <div className="mt-6 flex items-center justify-center gap-6 text-sm">
           <Link
             href="/tkb"
-            className="font-medium text-blue-700 hover:text-blue-900 hover:underline"
+            className="font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition-colors hover:text-zinc-900 hover:decoration-zinc-600"
           >
             Xem thời khóa biểu
           </Link>
           <Link
             href="/dang-nhap"
-            className="font-medium text-blue-700 hover:text-blue-900 hover:underline"
+            className="font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition-colors hover:text-zinc-900 hover:decoration-zinc-600"
           >
             Đăng nhập
           </Link>

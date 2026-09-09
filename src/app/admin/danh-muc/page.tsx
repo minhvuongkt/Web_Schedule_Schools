@@ -16,5 +16,5 @@ export default async function CatalogPage() {
     redirect("/khong-co-quyen?ly-do=sai-vai-tro");
   }
 
-  return <CatalogApp userDisplayName={user.displayName} />;
+  return <CatalogApp user={{ displayName: user.displayName, role: user.role }} />;
 }

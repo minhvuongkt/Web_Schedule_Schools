@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { cookies } from "next/headers";
 
 import { apiErrorToMessage, apiFetch } from "@/components/leadership/api";
@@ -8,6 +7,7 @@ import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton"
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { NotificationLiveRefresher } from "@/components/notifications/live-refresher";
 import type { NotificationsResponse } from "@/components/notifications/types";
+import { AppShell } from "@/components/site/app-shell";
 import { requireTeacher } from "@/server/auth/session";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TeacherNotificationsPage() {
-  await requireTeacher();
+  const user = await requireTeacher();
 
   const cookieStore = await cookies();
   const cookie = cookieStore.toString();
@@ -37,15 +37,9 @@ export default async function TeacherNotificationsPage() {
     0;
 
   return (
-    <main className="flex-1">
+    <AppShell page="Thông báo" user={user}>
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
-        <Link
-          href="/gv"
-          className="text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline"
-        >
-          ← Lịch dạy của tôi
-        </Link>
-        <header className="mb-6 mt-3 flex flex-wrap items-start justify-between gap-3">
+        <header className="mb-6 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
               Thông báo
@@ -78,6 +72,6 @@ export default async function TeacherNotificationsPage() {
           </p>
         )}
       </div>
-    </main>
+    </AppShell>
   );
 }

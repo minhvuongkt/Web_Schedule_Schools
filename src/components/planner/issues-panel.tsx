@@ -1,6 +1,7 @@
 "use client";
 
 import type { IssueItem, ValidateReport } from "./api";
+import { Icon } from "@/components/ui/icon";
 
 interface Props {
   report: ValidateReport;
@@ -34,7 +35,7 @@ function IssueRow({
           <button
             type="button"
             onClick={() => onLocate(ids)}
-            className="shrink-0 underline"
+            className="shrink-0 rounded px-1.5 py-0.5 font-medium underline-offset-2 transition-colors hover:bg-white/60 hover:underline"
           >
             Xem tiết
           </button>
@@ -61,9 +62,10 @@ export function IssuesPanel({ report, onLocate, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
-          className="text-xs text-zinc-400 hover:text-zinc-600"
+          className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+          aria-label="Đóng"
         >
-          Đóng
+          <Icon name="x" size={16} />
         </button>
       </div>
 

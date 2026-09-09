@@ -143,6 +143,19 @@ const ICONS: Record<string, IconPath> = {
     { d: "M10 14 21 3" },
     { d: "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" },
   ],
+  "trash-2": [
+    { d: "M3 6h18" },
+    { d: "M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" },
+    { d: "M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" },
+    { d: "M10 11v6" },
+    { d: "M14 11v6" },
+  ],
+  menu: [
+    { d: "M4 6h16" },
+    { d: "M4 12h16" },
+    { d: "M4 18h16" },
+  ],
+  "chevron-down": [{ d: "m6 9 6 6 6-6" }],
 };
 
 export type IconName = keyof typeof ICONS | (string & {});

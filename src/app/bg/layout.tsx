@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 
-import { PageTopBar } from "@/components/leadership/PageTopBar";
 import { requireUser } from "@/server/auth/session";
 import { can } from "@/server/domain/roles";
 
@@ -22,10 +21,5 @@ export default async function LeadershipLayout({
     redirect("/khong-co-quyen?ly-do=sai-vai-tro");
   }
 
-  return (
-    <div className="flex flex-1 flex-col bg-zinc-50">
-      <PageTopBar displayName={user.displayName} role={user.role} />
-      {children}
-    </div>
-  );
+  return <div className="flex flex-1 flex-col bg-zinc-50">{children}</div>;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { UiLink } from "@/components/ui/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StudentTodayView } from "@/server/services/student-view.service";
@@ -149,9 +149,9 @@ export function StudentHomeClient({ classes, initialClass, todayLabel, view }: P
           )}
 
           <p className="mt-4 text-center text-xs text-zinc-400">
-            <Link href={`/hsv/thoi-khoa-bieu?lop=${view.classInfo.code}`} className="hover:underline">
+            <UiLink variant="muted" href={`/hsv/thoi-khoa-bieu?lop=${view.classInfo.code}`} className="text-xs">
               Xem cả tuần →
-            </Link>
+            </UiLink>
           </p>
         </>
       ) : (

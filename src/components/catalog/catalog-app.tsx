@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { AppShell } from "@/components/site/app-shell";
 import { Icon } from "@/components/ui/icon";
+import { Select } from "@/components/ui/select";
+import type { Role } from "@/server/domain/roles";
 
 /**
  * Catalog management (/admin/danh-muc): teachers, subjects (+ components)
@@ -121,7 +124,7 @@ function Field({
 
 const POSITION_OPTIONS = ["GV", "Hiệu trưởng", "P.Hiệu trưởng", "Tổ trưởng", "Tổ phó"];
 
-export function CatalogApp({ userDisplayName }: { userDisplayName: string }) {
+export function CatalogApp({ user }: { user: { displayName: string; role: Role } }) {
   const [tab, setTab] = useState<Tab>("teachers");
   const [teachers, setTeachers] = useState<TeacherRow[]>([]);
   const [subjects, setSubjects] = useState<SubjectRow[]>([]);
@@ -207,28 +210,16 @@ export function CatalogApp({ userDisplayName }: { userDisplayName: string }) {
   }
 
   return (
-    <main className="flex-1 bg-zinc-50">
-      <header className="sticky top-0 z-20 border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <div>
-            <a
-              href="/admin"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:text-blue-900"
-            >
-              <Icon name="arrow-left" size={16} />
-              Xếp thời khóa biểu
-            </a>
-            <h1 className="mt-0.5 text-lg font-semibold text-zinc-900">
-              Danh mục trường học
-            </h1>
-            <p className="text-xs text-zinc-500">
-              {userDisplayName} · sửa thông tin giáo viên, môn học, phòng học
-            </p>
-          </div>
-        </div>
-      </header>
-
+    <AppShell page="Danh mục trường học" user={user}>
       <div className="mx-auto max-w-6xl px-4 py-6">
+        <header className="mb-4">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Danh mục trường học
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            Sửa thông tin giáo viên, môn học và phòng học của trường.
+          </p>
+        </header>
         {error ? (
           <div className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {error}
@@ -418,7 +409,7 @@ export function CatalogApp({ userDisplayName }: { userDisplayName: string }) {
           }
         />
       ) : null}
-    </main>
+    </AppShell>
   );
 }
 
@@ -691,17 +682,13 @@ function TeacherModal({
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Chức danh">
-            <select
-              name="position"
-              defaultValue={initial?.position ?? "GV"}
-              className={inputClass}
-            >
+            <Select name="position" defaultValue={initial?.position ?? "GV"}>
               {POSITION_OPTIONS.map((p) => (
                 <option key={p} value={p}>
                   {p}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="Chuyên môn (vd: ĐHSP Toán)">
             <input

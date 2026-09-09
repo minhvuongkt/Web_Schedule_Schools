@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { TimetableDayList } from "@/components/timetable/TimetableDayList";
@@ -10,6 +9,7 @@ import {
 } from "@/components/timetable/format";
 import { PublicFooter, PublicHeader } from "@/components/site/public-chrome";
 import { Icon } from "@/components/ui/icon";
+import { UiLink } from "@/components/ui/link";
 import {
   getActiveWeekContext,
   getPublishedTimetableForClass,
@@ -47,14 +47,10 @@ export default async function ClassTimetablePage(
       <main className="flex-1">
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <header className="mb-6">
-          <nav className="no-print mb-3 flex items-center gap-3 text-sm">
-            <Link
-              href="/tkb"
-              className="inline-flex items-center gap-1.5 font-medium text-blue-700 hover:text-blue-900"
-            >
-              <Icon name="arrow-left" size={16} />
+          <nav className="no-print mb-3">
+            <UiLink variant="back" href="/tkb">
               Chọn lớp khác
-            </Link>
+            </UiLink>
           </nav>
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
             {context.schoolName}

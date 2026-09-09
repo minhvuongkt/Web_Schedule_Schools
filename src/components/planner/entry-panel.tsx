@@ -9,6 +9,8 @@ import type {
   TeacherRef,
   VersionGrid,
 } from "./api";
+import { Icon } from "@/components/ui/icon";
+import { Select } from "@/components/ui/select";
 
 const VI_DAY = (dow: number) => (dow === 7 ? "Chủ nhật" : `Thứ ${dow + 1}`);
 const VI_DATE = (iso: string) => {
@@ -62,9 +64,11 @@ export function EntryPanel({
 }: Props) {
   const day = grid.days.find((d) => d.id === (cell?.dayId ?? entry?.academicDayId));
   const period = grid.periods.find((p) => p.id === (cell?.periodId ?? entry?.periodId));
+  // Entries only exist on school days — the picker must not offer holidays.
+  const schoolDays = grid.days.filter((d) => d.isSchoolDay);
 
   const [form, setForm] = useState<FormState>({
-    academicDayId: day?.id ?? grid.days[0]?.id ?? "",
+    academicDayId: day?.id ?? schoolDays[0]?.id ?? grid.days[0]?.id ?? "",
     periodId: period?.id ?? grid.periods[0]?.id ?? "",
     classId: entry?.classId ?? classFilter,
     subjectId: entry?.subjectId ?? subjects[0]?.id ?? "",
@@ -115,9 +119,10 @@ export function EntryPanel({
         <button
           type="button"
           onClick={onClose}
-          className="text-xs text-zinc-400 hover:text-zinc-600"
+          className="rounded-lg p-1.5 text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+          aria-label="Đóng"
         >
-          Đóng
+          <Icon name="x" size={16} />
         </button>
       </div>
 
@@ -128,127 +133,120 @@ export function EntryPanel({
       )}
 
       <div className="space-y-3 text-sm">
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Thứ</label>
-          <select
-            value={form.academicDayId}
-            disabled={!editable}
-            onChange={(e) => setForm({ ...form, academicDayId: e.target.value })}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
-          >
-            {grid.days.map((d) => (
-              <option key={d.id} value={d.id}>
-                {VI_DAY(d.dayOfWeek)} · {VI_DATE(d.date)}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Thứ"
+          labelVisible
+          value={form.academicDayId}
+          disabled={!editable}
+          onChange={(e) => setForm({ ...form, academicDayId: e.target.value })}
+        >
+          {schoolDays.map((d) => (
+            <option key={d.id} value={d.id}>
+              {VI_DAY(d.dayOfWeek)} · {VI_DATE(d.date)}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          label="Tiết"
+          labelVisible
+          value={form.periodId}
+          disabled={!editable}
+          onChange={(e) => setForm({ ...form, periodId: e.target.value })}
+        >
+          {grid.sessions.map((session) => (
+            <optgroup key={session.id} label={session.labelVi}>
+              {grid.periods
+                .filter((p) => p.sessionId === session.id)
+                .map((p) => (
+                  <option key={p.id} value={p.id}>
+                    Tiết {p.orderNo} · {p.startTime}
+                    {p.endTime ? `–${p.endTime}` : ""}
+                  </option>
+                ))}
+            </optgroup>
+          ))}
+        </Select>
+
+        <Select
+          label="Lớp"
+          labelVisible
+          value={form.classId}
+          disabled={!editable}
+          onChange={(e) => setForm({ ...form, classId: e.target.value })}
+        >
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.code}
+            </option>
+          ))}
+        </Select>
 
         <div>
-          <label className="block text-xs font-medium text-zinc-500">Tiết</label>
-          <select
-            value={form.periodId}
-            disabled={!editable}
-            onChange={(e) => setForm({ ...form, periodId: e.target.value })}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
-          >
-            {grid.sessions.map((session) => (
-              <optgroup key={session.id} label={session.labelVi}>
-                {grid.periods
-                  .filter((p) => p.sessionId === session.id)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      Tiết {p.orderNo} · {p.startTime}
-                      {p.endTime ? `–${p.endTime}` : ""}
-                    </option>
-                  ))}
-              </optgroup>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Lớp</label>
-          <select
-            value={form.classId}
-            disabled={!editable}
-            onChange={(e) => setForm({ ...form, classId: e.target.value })}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
-          >
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.code}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Môn học</label>
-          <select
+          <Select
+            label="Môn học"
+            labelVisible
             value={form.subjectId}
             disabled={!editable}
             onChange={(e) =>
               setForm({ ...form, subjectId: e.target.value, subjectComponentId: "" })
             }
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
           >
             {subjects.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
               </option>
             ))}
-          </select>
+          </Select>
           {subject && subject.components.length > 0 && (
-            <select
-              value={form.subjectComponentId}
-              disabled={!editable}
-              onChange={(e) => setForm({ ...form, subjectComponentId: e.target.value })}
-              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
-            >
-              <option value="">— Không có phân môn —</option>
-              {subject.components.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <div className="mt-2">
+              <Select
+                label="Phân môn"
+                labelVisible
+                value={form.subjectComponentId}
+                disabled={!editable}
+                onChange={(e) => setForm({ ...form, subjectComponentId: e.target.value })}
+              >
+                <option value="">— Không có phân môn —</option>
+                {subject.components.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
           )}
         </div>
 
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Giáo viên</label>
-          <select
-            value={form.teacherId}
-            disabled={!editable}
-            onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
-          >
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.fullName} ({t.code})
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Giáo viên"
+          labelVisible
+          value={form.teacherId}
+          disabled={!editable}
+          onChange={(e) => setForm({ ...form, teacherId: e.target.value })}
+        >
+          {teachers.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.fullName} ({t.code})
+            </option>
+          ))}
+        </Select>
 
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Phòng học</label>
-          <select
-            value={form.roomId}
-            disabled={!editable}
-            onChange={(e) => setForm({ ...form, roomId: e.target.value })}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
-          >
-            <option value="">— Không gán phòng —</option>
-            {rooms.map((r) => (
-              <option key={r.id} value={r.id}>
-                {r.code}
-                {r.capacity ? ` (${r.capacity} chỗ)` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
+        <Select
+          label="Phòng học"
+          labelVisible
+          value={form.roomId}
+          disabled={!editable}
+          onChange={(e) => setForm({ ...form, roomId: e.target.value })}
+        >
+          <option value="">— Không gán phòng —</option>
+          {rooms.map((r) => (
+            <option key={r.id} value={r.id}>
+              {r.code}
+              {r.capacity ? ` (${r.capacity} chỗ)` : ""}
+            </option>
+          ))}
+        </Select>
 
         <div>
           <label className="block text-xs font-medium text-zinc-500">Ghi chú</label>
@@ -257,7 +255,7 @@ export function EntryPanel({
             value={form.notes}
             disabled={!editable}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 disabled:bg-zinc-50"
+            className="mt-1 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600 disabled:bg-zinc-50"
           />
         </div>
       </div>

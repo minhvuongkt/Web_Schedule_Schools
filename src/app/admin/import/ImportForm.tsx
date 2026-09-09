@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
 
 interface WeekOption {
@@ -200,9 +201,9 @@ export default function ImportForm({ weeks }: { weeks: WeekOption[] }) {
           </p>
           <p className="mt-1">
             Mã phiên bản: <code className="text-xs">{committed.version.id}</code> —{" "}
-            <a href="/admin" className="text-blue-700 hover:underline">
+            <Link href="/admin" className="font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition-colors hover:text-zinc-900 hover:decoration-zinc-600">
               quay lại trang quản lý
-            </a>
+            </Link>
             .
           </p>
         </section>

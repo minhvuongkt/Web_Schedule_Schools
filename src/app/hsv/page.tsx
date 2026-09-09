@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { UiLink } from "@/components/ui/link";
 import { listClasses } from "@/server/services/timetable-read.service";
 import {
   getStudentTodayView,
@@ -74,9 +74,9 @@ export default async function StudentHomePage({
         }}
       />
       <p className="mt-6 text-center text-xs text-zinc-400">
-        <Link href="/tkb" className="hover:underline">
+        <UiLink variant="muted" href="/tkb" className="text-xs">
           Xem thời khóa biểu đầy đủ theo lớp
-        </Link>
+        </UiLink>
       </p>
     </main>
   );

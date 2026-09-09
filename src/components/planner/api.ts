@@ -187,6 +187,11 @@ export const api = {
     request<{ version: VersionSummary }>(`/api/timetable/versions/${versionId}/publish`, {
       method: "POST",
     }),
+  deleteVersion: (versionId: string) =>
+    request<{ ok: boolean; versionId: string; deletedEntries: number }>(
+      `/api/timetable/versions/${versionId}`,
+      { method: "DELETE" },
+    ),
   createEntry: (body: Record<string, unknown>) =>
     request<{ entry: GridEntry; revision: number }>("/api/timetable/entries", {
       method: "POST",

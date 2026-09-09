@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/server/db";
 import { requireUser } from "@/server/auth/session";
 import { can } from "@/server/domain/roles";
+import { AppShell } from "@/components/site/app-shell";
 import { dateToIso } from "@/server/services/school-calendar";
 import ImportForm from "./ImportForm";
 
@@ -38,19 +38,20 @@ export default async function ImportPage() {
   }));
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-8">
-      <header className="mb-6">
-        <Link href="/admin" className="text-sm text-blue-700 hover:underline">
-          ← Quản lý
-        </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Nhập khẩu thời khóa biểu từ Excel</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Tệp .xls/.xlsx có trang tính TKB (không dùng multipart — tệp được đọc
-          thành base64 phía trình duyệt). Xem trước không ghi dữ liệu; nhập
-          khẩu là tất-cả-hoặc-không gì.
-        </p>
-      </header>
-      <ImportForm weeks={weekOptions} />
-    </main>
+    <AppShell page="Nhập từ Excel" user={user}>
+      <div className="mx-auto w-full max-w-4xl px-4 py-8">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Nhập khẩu thời khóa biểu từ Excel
+          </h1>
+          <p className="mt-1 text-sm text-zinc-600">
+            Tệp .xls/.xlsx có trang tính TKB (không dùng multipart — tệp được đọc
+            thành base64 phía trình duyệt). Xem trước không ghi dữ liệu; nhập
+            khẩu là tất-cả-hoặc-không-gì.
+          </p>
+        </header>
+        <ImportForm weeks={weekOptions} />
+      </div>
+    </AppShell>
   );
 }

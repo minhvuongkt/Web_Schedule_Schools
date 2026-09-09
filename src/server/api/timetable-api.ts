@@ -6,6 +6,7 @@ import {
   createEntry,
   createVersion,
   deleteEntry,
+  deleteVersion,
   transitionVersion,
   updateEntry,
   validateVersion,
@@ -22,6 +23,7 @@ import { prisma } from "@/server/db";
  *   GET    /api/timetable/versions/:id        (full grid data)
  *   POST   /api/timetable/versions/:id/validate
  *   POST   /api/timetable/versions/:id/submit-review|approve|publish
+ *   DELETE /api/timetable/versions/:id        (DRAFT only)
  *   POST   /api/timetable/entries
  *   PATCH  /api/timetable/entries/:id
  *   DELETE /api/timetable/entries/:id
@@ -261,6 +263,18 @@ export async function handleGetVersionGrid(id: string): Promise<NextResponse> {
     return errorResponse(404, "VERSION_NOT_FOUND", "Không tìm thấy phiên bản thời khóa biểu.");
   }
   return NextResponse.json(grid);
+}
+
+/** DELETE /api/timetable/versions/:id — DRAFT-only, timetable:write. */
+export async function handleDeleteVersion(id: string): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  try {
+    const result = await deleteVersion(id, auth.user);
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    return mutationErrorResponse(error) ?? throwInternal(error);
+  }
 }
 
 export async function handleValidateVersion(id: string): Promise<NextResponse> {

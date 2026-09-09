@@ -17,6 +17,10 @@ import {
 import { EntryPanel } from "./entry-panel";
 import { IssuesPanel } from "./issues-panel";
 import { WorkloadBadge } from "./workload-badge";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { Icon } from "@/components/ui/icon";
+import { Select } from "@/components/ui/select";
+import { Toast } from "@/components/ui/toast";
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-zinc-100 text-zinc-700",
@@ -25,6 +29,20 @@ const STATUS_STYLES: Record<string, string> = {
   PUBLISHED: "bg-emerald-100 text-emerald-800",
   ARCHIVED: "bg-zinc-200 text-zinc-500",
 };
+
+const STATUS_VI: Record<string, string> = {
+  DRAFT: "Bản nháp",
+  REVIEW: "Chờ duyệt",
+  APPROVED: "Đã duyệt",
+  PUBLISHED: "Đã công bố",
+  ARCHIVED: "Đã lưu trữ",
+};
+
+interface ToastState {
+  id: number;
+  kind: "error" | "success";
+  message: string;
+}
 
 const VI_DAY = (dow: number) => (dow === 7 ? "Chủ nhật" : `Thứ ${dow + 1}`);
 const VI_DATE = (iso: string) => {
@@ -55,15 +73,37 @@ export function PlannerApp({ user }: Props) {
   const [selectedEntry, setSelectedEntry] = useState<GridEntry | null>(null);
   const [targetCell, setTargetCell] = useState<{ dayId: string; periodId: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [report, setReport] = useState<ValidateReport | null>(null);
   const [busy, setBusy] = useState(false);
   const undoStack = useRef<UndoAction[]>([]);
   const [undoCount, setUndoCount] = useState(0);
   const [highlightEntryId, setHighlightEntryId] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  const toastSeq = useRef(0);
 
   const canWrite = user.role === "TIMETABLE_ADMIN" || user.role === "SUPER_ADMIN";
   const canApprove = user.role === "PRINCIPAL" || user.role === "SUPER_ADMIN";
+
+  /** Success feedback: light toast, auto-dismissed after 4s. */
+  const flashNotice = useCallback((message: string) => {
+    if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
+    setError(null);
+    const id = ++toastSeq.current;
+    setToast({ id, kind: "success", message });
+    toastTimer.current = window.setTimeout(() => {
+      setToast((current) => (current !== null && current.id === id ? null : current));
+      toastTimer.current = null;
+    }, 4000);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
+    },
+    [],
+  );
 
   const loadVersions = useCallback(async (wid: string) => {
     const data = await api.versions(wid);
@@ -144,12 +184,12 @@ export function PlannerApp({ user }: Props) {
     try {
       await action.undo();
       await refresh();
-      setNotice(`Đã hoàn tác: ${action.label}`);
+      flashNotice(`Đã hoàn tác: ${action.label}`);
     } catch (e) {
       setError(`Hoàn tác thất bại: ${e instanceof Error ? e.message : "lỗi"}`);
       await refresh();
     }
-  }, [refresh]);
+  }, [refresh, flashNotice]);
 
   const handleCreate = async (payload: Omit<GridEntry, "id" | "status" | "notes"> & { notes?: string | null }): Promise<void> => {
     if (!version || !editable) return;
@@ -168,7 +208,7 @@ export function PlannerApp({ user }: Props) {
         expectedRevision: version.revision,
       });
       await refresh();
-      setNotice("Đã thêm tiết học.");
+      flashNotice("Đã thêm tiết học.");
       setTargetCell(null);
     } catch (e) {
       handleError(e, "Thêm tiết học thất bại.");
@@ -199,7 +239,7 @@ export function PlannerApp({ user }: Props) {
         },
       });
       await refresh();
-      setNotice("Đã cập nhật tiết học.");
+      flashNotice("Đã cập nhật tiết học.");
     } catch (e) {
       handleError(e, "Cập nhật thất bại.");
     } finally {
@@ -227,7 +267,7 @@ export function PlannerApp({ user }: Props) {
         },
       });
       await refresh();
-      setNotice("Đã di chuyển tiết học.");
+      flashNotice("Đã di chuyển tiết học.");
     } catch (e) {
       handleError(e, "Di chuyển thất bại (trùng lịch?).");
       await refresh();
@@ -260,7 +300,7 @@ export function PlannerApp({ user }: Props) {
       });
       await refresh();
       setSelectedEntry(null);
-      setNotice("Đã xóa tiết học.");
+      flashNotice("Đã xóa tiết học.");
     } catch (e) {
       handleError(e, "Xóa thất bại.");
     } finally {
@@ -298,7 +338,7 @@ export function PlannerApp({ user }: Props) {
       else if (action === "approve") await api.approve(versionId);
       else await api.publish(versionId);
       await refresh();
-      setNotice("Đã cập nhật trạng thái phiên bản.");
+      flashNotice("Đã cập nhật trạng thái phiên bản.");
     } catch (e) {
       handleError(e, "Thao tác thất bại.");
     } finally {
@@ -316,7 +356,7 @@ export function PlannerApp({ user }: Props) {
       await loadVersions(weekId);
       setVersionId(data.version.id);
       await loadGrid(data.version.id);
-      setNotice(`Đã tạo bản nháp v${data.version.versionNo}.`);
+      flashNotice(`Đã tạo bản nháp v${data.version.versionNo}.`);
     } catch (e) {
       handleError(e, "Tạo bản nháp thất bại.");
     } finally {
@@ -334,6 +374,45 @@ export function PlannerApp({ user }: Props) {
       handleError(e, "Kiểm tra thất bại.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const clearPanels = () => {
+    setSelectedEntry(null);
+    setTargetCell(null);
+    setReport(null);
+  };
+
+  /**
+   * DRAFT-only delete. No expectedRevision on version deletes, so the
+   * realistic races are 404 (someone deleted first) and 409 (transitioned)
+   * — both resync the version list. Relies on the versionId effect to load
+   * the next grid (refresh() would hold a stale versionId closure).
+   */
+  const handleDeleteVersion = async () => {
+    if (!versionId || version?.status !== "DRAFT" || !canWrite) return;
+    setBusy(true);
+    try {
+      const result = await api.deleteVersion(versionId);
+      clearPanels();
+      setGrid(null);
+      setHighlightEntryId(null);
+      undoStack.current = [];
+      setUndoCount(0);
+      const remaining = await loadVersions(weekId);
+      setVersionId(remaining.length > 0 ? remaining[0].id : "");
+      flashNotice(`Đã xóa bản nháp (${result.deletedEntries} tiết).`);
+    } catch (e) {
+      handleError(e, "Xóa bản nháp thất bại.");
+      if (e instanceof ApiError && (e.status === 404 || e.status === 409)) {
+        clearPanels();
+        setGrid(null);
+        const remaining = await loadVersions(weekId).catch(() => [] as VersionSummary[]);
+        setVersionId(remaining[0]?.id ?? "");
+      }
+    } finally {
+      setBusy(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -376,168 +455,192 @@ export function PlannerApp({ user }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4">
-      {/* toolbar */}
-      <div className="mb-4 flex flex-wrap items-center gap-2 text-sm">
-        <select
-          value={weekId}
-          onChange={(e) => {
-            setWeekId(e.target.value);
-            setVersionId("");
-            setGrid(null);
-            setReport(null);
-            loadVersions(e.target.value).then((vs) => {
-              if (vs.length > 0) setVersionId(vs[0].id);
-            });
-          }}
-          className="rounded-md border border-zinc-300 bg-white px-2 py-1.5"
-        >
-          {weeks.map((w) => (
-            <option key={w.id} value={w.id}>
-              Tuần {String(w.weekNo).padStart(2, "0")} ({VI_DATE(w.weekStart)} –{" "}
-              {VI_DATE(w.weekEnd)})
-            </option>
-          ))}
-        </select>
+    <div>
+      <div className="mx-auto max-w-7xl px-4 pb-8 pt-4">
+      <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
+        {/* left column: sticky toolbar + grid. The toolbar lives INSIDE this
+            column so the right rail sticks independently (no shared offset);
+            mobile top bar (AppShell) is h-14 → top-14, ≥lg no top bar → top-0.
+            Rows wrap instead of scrolling so every button (incl. Xóa bản nháp)
+            is always visible. */}
+        <div className="min-w-0 flex-1">
+          <div className="no-print sticky top-14 z-20 mb-4 rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm lg:top-0">
+            <div className="space-y-2">
+              {/* Row 1 — context + lifecycle actions */}
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <Select
+                  label="Chọn tuần"
+                  value={weekId}
+                  onChange={(e) => {
+                    setWeekId(e.target.value);
+                    setVersionId("");
+                    setGrid(null);
+                    setReport(null);
+                    undoStack.current = [];
+                    setUndoCount(0);
+                    loadVersions(e.target.value).then((vs) => {
+                      if (vs.length > 0) setVersionId(vs[0].id);
+                    });
+                  }}
+                >
+                  {weeks.map((w) => (
+                    <option key={w.id} value={w.id}>
+                      Tuần {String(w.weekNo).padStart(2, "0")} ({VI_DATE(w.weekStart)} –{" "}
+                      {VI_DATE(w.weekEnd)})
+                    </option>
+                  ))}
+                </Select>
 
-        <select
-          value={versionId}
-          onChange={(e) => setVersionId(e.target.value)}
-          className="rounded-md border border-zinc-300 bg-white px-2 py-1.5"
-        >
-          {versions.map((v) => (
-            <option key={v.id} value={v.id}>
-              v{v.versionNo} · {v.status} ({v.entryCount} tiết)
-            </option>
-          ))}
-          {versions.length === 0 && <option value="">—</option>}
-        </select>
+                <Select
+                  label="Chọn phiên bản"
+                  value={versionId}
+                  onChange={(e) => setVersionId(e.target.value)}
+                >
+                  {versions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      v{v.versionNo} · {STATUS_VI[v.status] ?? v.status} ({v.entryCount} tiết)
+                    </option>
+                  ))}
+                  {versions.length === 0 && <option value="">—</option>}
+                </Select>
 
-        {version && (
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[version.status] ?? ""}`}
-          >
-            {version.status}
-          </span>
-        )}
+                {version && (
+                  <span
+                    className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[version.status] ?? ""}`}
+                  >
+                    {STATUS_VI[version.status] ?? version.status}
+                  </span>
+                )}
 
-        <div className="ml-auto flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => handleCreateDraft(false)}
-            disabled={busy}
-            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:border-zinc-500 disabled:opacity-50"
-          >
-            Tạo bản nháp mới
-          </button>
-          {versionId && (
-            <button
-              type="button"
-              onClick={() => handleCreateDraft(true)}
-              disabled={busy}
-              className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:border-zinc-500 disabled:opacity-50"
-            >
-              Nhân bản từ phiên bản này
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={handleValidate}
-            disabled={busy || !versionId}
-            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:border-zinc-500 disabled:opacity-50"
-          >
-            Kiểm tra
-          </button>
-          {version?.status === "DRAFT" && canWrite && (
-            <button
-              type="button"
-              onClick={() => handleWorkflow("submit-review", "Gửi phiên bản này để duyệt?")}
-              disabled={busy}
-              className="rounded-md bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
-            >
-              Gửi duyệt
-            </button>
-          )}
-          {version?.status === "REVIEW" && canApprove && (
-            <button
-              type="button"
-              onClick={() => handleWorkflow("approve", "Phê duyệt phiên bản này?")}
-              disabled={busy}
-              className="rounded-md bg-blue-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
-            >
-              Phê duyệt
-            </button>
-          )}
-          {version?.status === "APPROVED" && (canWrite || canApprove) && (
-            <button
-              type="button"
-              onClick={() => handleWorkflow("publish", "Công bố phiên bản này? Bản công bố cũ sẽ được lưu trữ.")}
-              disabled={busy}
-              className="rounded-md bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
-            >
-              Công bố
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={runUndo}
-            disabled={undoCount === 0 || busy}
-            className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:border-zinc-500 disabled:opacity-50"
-          >
-            Hoàn tác ({undoCount})
-          </button>
-        </div>
-      </div>
+                <div className="ml-auto flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleValidate}
+                    disabled={busy || !versionId}
+                    className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                  >
+                    Kiểm tra
+                  </button>
+                  {version?.status === "DRAFT" && canWrite && (
+                    <button
+                      type="button"
+                      onClick={() => handleWorkflow("submit-review", "Gửi phiên bản này để duyệt?")}
+                      disabled={busy}
+                      className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                    >
+                      Gửi duyệt
+                    </button>
+                  )}
+                  {version?.status === "REVIEW" && canApprove && (
+                    <button
+                      type="button"
+                      onClick={() => handleWorkflow("approve", "Phê duyệt phiên bản này?")}
+                      disabled={busy}
+                      className="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+                    >
+                      Phê duyệt
+                    </button>
+                  )}
+                  {version?.status === "APPROVED" && (canWrite || canApprove) && (
+                    <button
+                      type="button"
+                      onClick={() => handleWorkflow("publish", "Công bố phiên bản này? Bản công bố cũ sẽ được lưu trữ.")}
+                      disabled={busy}
+                      className="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+                    >
+                      Công bố
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={runUndo}
+                    disabled={undoCount === 0 || busy}
+                    title="Hoàn tác thao tác vừa rồi (Ctrl+Z)"
+                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                  >
+                    <Icon name="history-icon" size={15} />
+                    Hoàn tác ({undoCount})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCreateDraft(false)}
+                    disabled={busy}
+                    className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                  >
+                    Tạo bản nháp mới
+                  </button>
+                  {versionId && (
+                    <button
+                      type="button"
+                      onClick={() => handleCreateDraft(true)}
+                      disabled={busy}
+                      title="Nhân bản phiên bản đang chọn thành bản nháp mới"
+                      className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                    >
+                      Nhân bản
+                    </button>
+                  )}
+                  {canWrite && versionId && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      disabled={busy || version?.status !== "DRAFT"}
+                      title={
+                        version?.status === "DRAFT"
+                          ? "Xóa bản nháp đang chọn (không thể hoàn tác)"
+                          : "Chỉ bản nháp mới được xóa — phiên bản đã duyệt/công bố là lịch sử bất biến"
+                      }
+                      className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Icon name="trash-2" size={15} />
+                      Xóa bản nháp
+                    </button>
+                  )}
+                </div>
+              </div>
 
-      {/* banners */}
-      {error && (
-        <div className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-          <button type="button" onClick={() => setError(null)} className="ml-3 underline">
-            Đóng
-          </button>
-        </div>
-      )}
-      {notice && (
-        <div className="mb-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          {notice}
-          <button type="button" onClick={() => setNotice(null)} className="ml-3 underline">
-            Đóng
-          </button>
-        </div>
-      )}
-      {version && !editable && (
-        <div className="mb-3 rounded-md border border-zinc-200 bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
-          Phiên bản {version.status} — chỉ xem (không chỉnh sửa được). Tạo bản nháp để chỉnh sửa.
-        </div>
-      )}
-
-      <div className="flex flex-col gap-4 xl:flex-row">
-        {/* grid */}
-        <div className="min-w-0 flex-1 overflow-x-auto">
-          <div className="mb-2 flex items-center gap-2 text-sm">
-            <label htmlFor="class-select" className="font-medium text-zinc-700">
-              Lớp
-            </label>
-            <select
-              id="class-select"
-              value={classId}
-              onChange={(e) => setClassId(e.target.value)}
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1.5"
-            >
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.code}
-                </option>
-              ))}
-            </select>
-            <WorkloadBadge
-              entries={grid?.entries ?? []}
-              classId={classId}
-              editable={Boolean(editable)}
-            />
+              {/* Row 2 — class chips + workload signal */}
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="shrink-0 pr-1 text-xs font-medium text-zinc-500">Lớp</span>
+                {classes.map((c) => {
+                  const active = c.id === classId;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => setClassId(c.id)}
+                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                        active
+                          ? "border-blue-700 bg-blue-700 text-white shadow-sm"
+                          : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
+                      }`}
+                    >
+                      {c.code}
+                    </button>
+                  );
+                })}
+                <div className="ml-auto shrink-0">
+                  <WorkloadBadge
+                    entries={grid?.entries ?? []}
+                    classId={classId}
+                    editable={Boolean(editable)}
+                    teachers={teachers}
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
+          {/* persistent context strip (feedback lives in toasts) */}
+          {version && !editable && (
+            <div className="mb-3 rounded-lg border border-zinc-200 bg-zinc-100 px-3 py-1.5 text-xs text-zinc-600">
+              Phiên bản {STATUS_VI[version.status] ?? version.status} — chỉ xem (không chỉnh sửa
+              được). Tạo bản nháp để chỉnh sửa.
+            </div>
+          )}
+
+          <div className="overflow-x-auto [&_table]:min-w-2xl">
           {!grid ? (
             <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
               {versions.length === 0
@@ -654,48 +757,98 @@ export function PlannerApp({ user }: Props) {
               })}
             </div>
           )}
+          </div>
         </div>
 
-        {/* side panels */}
-        <aside className="w-full shrink-0 space-y-4 xl:w-80">
-          {(selectedEntry || targetCell) && version && (
-            <EntryPanel
-              key={selectedEntry?.id ?? `${targetCell?.dayId}|${targetCell?.periodId}`}
-              entry={selectedEntry}
-              cell={targetCell ?? (selectedEntry
-                ? { dayId: selectedEntry.academicDayId, periodId: selectedEntry.periodId }
-                : null)}
-              grid={grid}
-              classes={classes}
-              teachers={teachers}
-              subjects={subjects}
-              rooms={rooms}
-              classFilter={classId}
-              editable={editable && canWrite}
-              busy={busy}
-              onCreate={handleCreate}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-              onClose={() => {
-                setSelectedEntry(null);
-                setTargetCell(null);
-              }}
+        {/* Panel dock: bottom sheet (<xl) so the grid stays visible; sticky
+            right rail (≥xl) sticking at top-4 — safe because the toolbar is
+            inside the LEFT column (no offset coupling). */}
+        {Boolean(selectedEntry || targetCell || report) && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] xl:hidden"
+              onClick={clearPanels}
+              aria-hidden="true"
             />
-          )}
-          {report && (
-            <IssuesPanel
-              report={report}
-              onLocate={(ids) => {
-                const id = Array.isArray(ids) ? String(ids[0]) : String(ids);
-                setHighlightEntryId(id);
-                const entry = grid?.entries.find((e) => e.id === id);
-                if (entry) setClassId(entry.classId);
-              }}
-              onClose={() => setReport(null)}
-            />
-          )}
-        </aside>
+            <aside className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] space-y-4 overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-4 xl:z-auto xl:max-h-[calc(100vh-2rem)] xl:w-80 xl:shrink-0 xl:self-start xl:overflow-y-auto xl:rounded-none xl:p-0 xl:shadow-none">
+              <div
+                className="mx-auto h-1 w-10 rounded-full bg-zinc-200 xl:hidden"
+                aria-hidden="true"
+              />
+              {(selectedEntry || targetCell) && version && (
+                <EntryPanel
+                  key={selectedEntry?.id ?? `${targetCell?.dayId}|${targetCell?.periodId}`}
+                  entry={selectedEntry}
+                  cell={targetCell ?? (selectedEntry
+                    ? { dayId: selectedEntry.academicDayId, periodId: selectedEntry.periodId }
+                    : null)}
+                  grid={grid}
+                  classes={classes}
+                  teachers={teachers}
+                  subjects={subjects}
+                  rooms={rooms}
+                  classFilter={classId}
+                  editable={editable && canWrite}
+                  busy={busy}
+                  onCreate={handleCreate}
+                  onUpdate={handleUpdate}
+                  onDelete={handleDelete}
+                  onClose={() => {
+                    setSelectedEntry(null);
+                    setTargetCell(null);
+                  }}
+                />
+              )}
+              {report && (
+                <IssuesPanel
+                  report={report}
+                  onLocate={(ids) => {
+                    const id = Array.isArray(ids) ? String(ids[0]) : String(ids);
+                    setHighlightEntryId(id);
+                    const entry = grid?.entries.find((e) => e.id === id);
+                    if (entry) setClassId(entry.classId);
+                  }}
+                  onClose={() => setReport(null)}
+                />
+              )}
+            </aside>
+          </>
+        )}
       </div>
+      </div>
+
+      {/* feedback overlays (viewport-anchored via portal) */}
+      {error && (
+        <Toast kind="error" message={error} onClose={() => setError(null)} />
+      )}
+      {toast && (
+        <Toast
+          key={toast.id}
+          kind={toast.kind}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="Xóa bản nháp này?"
+        tone="danger"
+        busy={busy}
+        confirmLabel="Xóa bản nháp"
+        onConfirm={handleDeleteVersion}
+        onCancel={() => setShowDeleteConfirm(false)}
+        description={
+          version ? (
+            <>
+              Xóa <strong>v{version.versionNo} · {STATUS_VI.DRAFT}</strong> cùng{" "}
+              <strong>{grid?.entries.length ?? 0} tiết học</strong> đã xếp trong tuần
+              này. Thao tác này không thể hoàn tác; các phiên bản khác và phiên
+              bản đã công bố không bị ảnh hưởng.
+            </>
+          ) : null
+        }
+      />
     </div>
   );
 }

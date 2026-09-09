@@ -1,7 +1,7 @@
 // Service worker for the public timetable PWA (Phase 1: read-only offline shell).
 // Plain JS on purpose — served straight from /public with no build step.
 
-const SHELL_CACHE = "tkb-shell-v2"; // bump on deploy: purges stale cached HTML + chunks
+const SHELL_CACHE = "tkb-shell-v3"; // bump on deploy: purges stale cached HTML + chunks
 const META_CACHE = "tkb-meta";
 const SYNCED_AT_KEY = "/__syncedAt";
 const ALLOWED_CACHES = [SHELL_CACHE, META_CACHE];

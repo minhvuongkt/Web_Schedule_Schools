@@ -288,13 +288,13 @@ export default async function LandingPage() {
           <nav className="ml-auto flex items-center gap-1 text-sm">
             <Link
               href="/tkb"
-              className="rounded-lg px-3 py-2 font-medium text-sky-100/90 transition hover:bg-white/10 hover:text-white"
+              className="rounded-lg px-2.5 py-2 font-medium text-sky-100/90 transition duration-200 hover:bg-white/10 hover:text-white sm:px-3"
             >
               Thời khóa biểu
             </Link>
             <Link
               href="/hsv"
-              className="rounded-lg px-3 py-2 font-medium text-sky-100/90 transition hover:bg-white/10 hover:text-white"
+              className="hidden rounded-lg px-3 py-2 font-medium text-sky-100/90 transition duration-200 hover:bg-white/10 hover:text-white sm:block"
             >
               Sổ tay học sinh
             </Link>

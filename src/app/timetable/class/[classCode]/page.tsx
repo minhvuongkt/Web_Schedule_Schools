@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PublicFooter, PublicHeader } from "@/components/site/public-chrome";
+import { UiLink } from "@/components/ui/link";
 import {
   getActiveWeekContext,
   getPublishedTimetableForClass,
@@ -43,12 +43,9 @@ export default async function ClassDeepLinkPage({ params }: PageProps) {
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
       <header className="mb-6">
         <nav className="mb-3 text-sm">
-          <Link
-            href="/tkb"
-            className="inline-flex items-center gap-1.5 font-medium text-blue-700 hover:text-blue-900"
-          >
-            ← Chọn lớp khác
-          </Link>
+          <UiLink variant="back" href="/tkb">
+            Chọn lớp khác
+          </UiLink>
         </nav>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
           <h1 className="text-2xl font-semibold text-zinc-900">
@@ -131,13 +128,13 @@ export default async function ClassDeepLinkPage({ params }: PageProps) {
           </code>
         </p>
         <p>
-          <Link href="/tkb" className="hover:underline">
-            · Tat ca cac lop
-          </Link>
+          <UiLink variant="muted" href="/tkb" className="text-xs">
+            · Tất cả các lớp
+          </UiLink>
           {" · "}
-          <Link href="/hsv" className="hover:underline">
+          <UiLink variant="muted" href="/hsv" className="text-xs">
             Sổ tay học sinh
-          </Link>
+          </UiLink>
         </p>
       </footer>
       </main>

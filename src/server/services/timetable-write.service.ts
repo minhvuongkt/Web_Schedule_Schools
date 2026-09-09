@@ -68,13 +68,14 @@ interface VersionMeta {
   weekId: string;
   status: string;
   revision: number;
+  versionNo: number;
   week: { weekNo: number };
 }
 
 async function loadVersionMeta(versionId: string): Promise<VersionMeta> {
   const version = await prisma.timetableVersion.findUnique({
     where: { id: versionId },
-    select: { id: true, weekId: true, status: true, revision: true, week: { select: { weekNo: true } } },
+    select: { id: true, weekId: true, status: true, revision: true, versionNo: true, week: { select: { weekNo: true } } },
   });
   if (!version) {
     throw new MutationError("VERSION_NOT_FOUND", "Không tìm thấy phiên bản thời khóa biểu.", { versionId }, 404);
@@ -713,6 +714,57 @@ export async function createVersion(
       },
     });
     return { versionId: version.id, versionNo, revision: version.revision, status: "DRAFT" };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Version deletion (DRAFT only — published/archived history is immutable)
+// ---------------------------------------------------------------------------
+
+export async function deleteVersion(
+  versionId: string,
+  actor: SessionUser,
+): Promise<{ versionId: string; deletedEntries: number }> {
+  assertPermission(actor.role as Role, "timetable:write");
+  const version = await loadVersionMeta(versionId);
+  if (version.status !== "DRAFT") {
+    throw new MutationError(
+      "INVALID_TRANSITION",
+      `Chỉ bản nháp mới được xóa. Phiên bản này đang ở trạng thái ${version.status} (lịch sử phê duyệt phải được giữ nguyên).`,
+      { versionId, status: version.status },
+      409,
+    );
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const entries = await tx.timetableEntry.findMany({
+      where: { versionId },
+      select: { id: true, substitution: { select: { id: true } }, makeupResult: { select: { id: true } } },
+    });
+    // DRAFT versions cannot have live operations (they only exist on
+    // PUBLISHED versions), but fail loudly rather than corrupting history.
+    if (entries.some((e) => e.substitution !== null || e.makeupResult !== null)) {
+      throw new MutationError(
+        "VERSION_HAS_LIVE_OPS",
+        "Phiên bản có tiết học liên quan dạy thay/dạy bù — không thể xóa.",
+        { versionId },
+        409,
+      );
+    }
+    await tx.timetableEntry.deleteMany({ where: { versionId } });
+    await tx.timetableVersion.delete({ where: { id: versionId } });
+    await tx.auditLog.create({
+      data: {
+        actorId: actor.id,
+        actorName: actor.displayName,
+        action: "DELETE",
+        entityType: "TimetableVersion",
+        entityId: versionId,
+        before: { versionNo: version.versionNo, status: "DRAFT", entryCount: entries.length },
+        reason: "Xóa bản nháp",
+      },
+    });
+    return { versionId, deletedEntries: entries.length };
   });
 }
 

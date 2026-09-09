@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { formatWeekRange } from "@/components/timetable/format";
 import { TeacherDayList } from "@/components/teacher/TeacherDayList";
 import { TeacherWeekTable } from "@/components/teacher/TeacherWeekTable";
 import { WorkloadSummary } from "@/components/teacher/WorkloadSummary";
+import { AppShell } from "@/components/site/app-shell";
 import { requireTeacher } from "@/server/auth/session";
 import {
   getTeacherTimetable,
@@ -29,37 +29,19 @@ export default async function TeacherTimetablePage() {
     .join(" · ");
 
   return (
-    <main className="flex-1 bg-zinc-50">
+    <AppShell page="Lịch dạy của tôi" user={user}>
       <div className="mx-auto w-full max-w-5xl px-4 py-6">
         <header className="mb-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-                Lịch dạy của tôi
-              </h1>
-              {week ? (
-                <p className="mt-1 text-sm text-zinc-600">
-                  {`Tuần ${String(week.weekNo).padStart(2, "0")} · ${formatWeekRange(week.weekStart, week.weekEnd)}`}{" "}
-                  · Năm học {week.schoolYearName}
-                </p>
-              ) : null}
-              <p className="mt-0.5 text-sm text-zinc-500">{teacherLine}</p>
-            </div>
-            <nav className="flex items-center gap-3 text-sm">
-              <Link
-                href="/gv/thong-bao"
-                className="font-medium text-blue-700 hover:text-blue-900 hover:underline"
-              >
-                Thông báo
-              </Link>
-              <Link
-                href="/"
-                className="font-medium text-zinc-500 hover:text-zinc-800 hover:underline"
-              >
-                Trang chủ
-              </Link>
-            </nav>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+            Lịch dạy của tôi
+          </h1>
+          {week ? (
+            <p className="mt-1 text-sm text-zinc-600">
+              {`Tuần ${String(week.weekNo).padStart(2, "0")} · ${formatWeekRange(week.weekStart, week.weekEnd)}`}{" "}
+              · Năm học {week.schoolYearName}
+            </p>
+          ) : null}
+          <p className="mt-0.5 text-sm text-zinc-500">{teacherLine}</p>
         </header>
 
         {week ? (
@@ -96,6 +78,6 @@ export default async function TeacherTimetablePage() {
           </p>
         )}
       </div>
-    </main>
+    </AppShell>
   );
 }

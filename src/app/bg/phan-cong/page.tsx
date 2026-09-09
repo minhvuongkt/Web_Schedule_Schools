@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/server/auth/session";
 import { can } from "@/server/domain/roles";
+import { AppShell } from "@/components/site/app-shell";
 import { AssignmentsApp } from "@/components/leadership/assignments-app";
 
 export const metadata: Metadata = {
@@ -18,25 +19,22 @@ export default async function AssignmentsPage() {
   const canManage = can(user.role, "assignments:manage");
 
   return (
-    <main className="flex-1 bg-zinc-50">
-      <header className="border-b border-zinc-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-3">
-          <h1 className="text-lg font-semibold text-zinc-900">
-            Phân công giảng dạy
-          </h1>
-          <p className="text-xs text-zinc-500">
-            Khối lượng giảng dạy dự kiến (ai dạy môn gì, lớp nào, bao nhiêu
-            tiết/tuần) — tách biệt với thời khóa biểu đã xếp.
-            {!canManage && " (chỉ xem)"}
-          </p>
-          <nav className="mt-2 text-sm">
-            <a href="/bg" className="text-blue-700 hover:underline">
-              ← Ban giám hiệu
-            </a>
-          </nav>
+    <AppShell page="Phân công giảng dạy" user={user}>
+      <main className="flex-1">
+        <div className="border-b border-zinc-200 bg-white">
+          <div className="mx-auto max-w-7xl px-4 py-4">
+            <h1 className="text-lg font-semibold text-zinc-900">
+              Phân công giảng dạy
+            </h1>
+            <p className="text-xs text-zinc-500">
+              Khối lượng giảng dạy dự kiến (ai dạy môn gì, lớp nào, bao nhiêu
+              tiết/tuần) — tách biệt với thời khóa biểu đã xếp.
+              {!canManage && " (chỉ xem)"}
+            </p>
+          </div>
         </div>
-      </header>
-      <AssignmentsApp canManage={canManage} />
-    </main>
+        <AssignmentsApp canManage={canManage} />
+      </main>
+    </AppShell>
   );
 }

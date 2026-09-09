@@ -40,7 +40,7 @@ export function PublicHeader({ current }: { current?: "tkb" | "hsv" | "login" })
         </Link>
         <nav className="ml-auto flex items-center gap-1">
           {navItem("/tkb", "Thời khóa biểu", current === "tkb")}
-          {navItem("/hsv", "Sổ tay học sinh", current === "hsv")}
+          <span className="hidden sm:block">{navItem("/hsv", "Sổ tay học sinh", current === "hsv")}</span>
           {current === "login" ? null : (
             <Link
               href="/dang-nhap"

@@ -145,7 +145,7 @@ export function GlobalSearch({ initialQuery = "" }: { initialQuery?: string }) {
           {results && results.teachers.length > 0 && (
             <p className="border-t border-zinc-100 px-3 py-2 text-xs text-zinc-400">
               Lịch dạy của giáo viên yêu cầu{" "}
-              <Link href="/dang-nhap" className="text-blue-700 hover:underline">
+              <Link href="/dang-nhap" className="font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 transition-colors hover:text-zinc-900 hover:decoration-zinc-600">
                 đăng nhập
               </Link>
               .
