@@ -188,6 +188,7 @@ interface RoleCardProps {
   bullets: string[];
   href: string;
   cta: string;
+  delay?: number;
 }
 
 function RoleCard({
@@ -200,9 +201,13 @@ function RoleCard({
   bullets,
   href,
   cta,
+  delay,
 }: RoleCardProps) {
   return (
-    <div className="flex flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-950/5 transition duration-200 hover:-translate-y-1 hover:shadow-xl">
+    <div
+      className="flex animate-fade-up flex-col rounded-2xl bg-white p-6 shadow-sm ring-1 ring-zinc-950/5 transition duration-200 hover:-translate-y-1 hover:shadow-xl"
+      style={delay ? { animationDelay: `${delay}ms` } : undefined}
+    >
       <div className="flex items-center gap-3">
         <span className={`flex h-11 w-11 items-center justify-center rounded-xl ${bubbleClass}`}>
           <Icon name={icon} size={22} />
@@ -238,11 +243,15 @@ interface FeatureProps {
   bubbleClass: string;
   title: string;
   text: string;
+  delay?: number;
 }
 
-function Feature({ icon, bubbleClass, title, text }: FeatureProps) {
+function Feature({ icon, bubbleClass, title, text, delay }: FeatureProps) {
   return (
-    <div className="flex gap-4">
+    <div
+      className="flex animate-fade-up gap-4"
+      style={delay ? { animationDelay: `${delay}ms` } : undefined}
+    >
       <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${bubbleClass}`}>
         <Icon name={icon} size={20} />
       </span>
@@ -415,7 +424,7 @@ export default async function LandingPage() {
                 <dt className="text-xs font-medium text-zinc-500">Giáo viên</dt>
               </div>
             </div>
-            <div className="flex items-center gap-3.5">
+            <div className="flex animate-fade-up items-center gap-3.5" style={{ animationDelay: "240ms" }}>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
                 <Icon name="book-open" size={20} />
               </span>
@@ -426,7 +435,7 @@ export default async function LandingPage() {
                 <dt className="text-xs font-medium text-zinc-500">Môn học</dt>
               </div>
             </div>
-            <div className="flex items-center gap-3.5">
+            <div className="flex animate-fade-up items-center gap-3.5" style={{ animationDelay: "320ms" }}>
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
                 <Icon name="clock" size={20} />
               </span>
@@ -444,7 +453,7 @@ export default async function LandingPage() {
       ) : null}
 
       <section className="bg-zinc-50 py-20">
-        <div className="mx-auto w-full max-w-6xl px-4">
+        <div className="mx-auto w-full max-w-6xl px-4 2xl:max-w-7xl">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-widest text-blue-700">
               Không gian làm việc
@@ -474,6 +483,7 @@ export default async function LandingPage() {
               ]}
               href="/hsv"
               cta="Mở sổ tay học sinh"
+              delay={0}
             />
             <RoleCard
               icon="book-open"
@@ -489,6 +499,7 @@ export default async function LandingPage() {
               ]}
               href="/dang-nhap?next=%2Fgv"
               cta="Đăng nhập để xem lịch dạy"
+              delay={80}
             />
             <RoleCard
               icon="chart-column"
@@ -504,6 +515,7 @@ export default async function LandingPage() {
               ]}
               href="/dang-nhap?next=%2Fbg"
               cta="Đăng nhập vào bảng điều khiển"
+              delay={160}
             />
             <RoleCard
               icon="settings"
@@ -519,6 +531,7 @@ export default async function LandingPage() {
               ]}
               href="/dang-nhap?next=%2Fadmin"
               cta="Đăng nhập vào trình soạn"
+              delay={240}
             />
           </div>
         </div>
