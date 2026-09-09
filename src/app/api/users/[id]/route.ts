@@ -37,9 +37,10 @@ export async function PATCH(
         id,
         {
           displayName: parsed.data.displayName,
-          email: parsed.data.email ?? undefined,
+          // Preserve explicit null (clear) vs absent (keep) — do not coerce.
+          email: parsed.data.email,
           role: parsed.data.role,
-          teacherId: parsed.data.teacherId ?? undefined,
+          teacherId: parsed.data.teacherId,
           isActive: parsed.data.isActive,
         },
         auth.user,
