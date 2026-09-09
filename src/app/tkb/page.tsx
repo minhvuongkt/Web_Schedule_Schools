@@ -224,12 +224,12 @@ export default async function TimetableClassSelectorPage({
                 Chưa có lớp nào trong năm học hiện tại.
               </p>
             ) : (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-5">
                 {classes.map((cls) => (
                   <li key={cls.id}>
                     <Link
                       href={`/tkb/${cls.code}`}
-                      className="group relative block overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+                      className="group relative block overflow-hidden rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-lg active:translate-y-0 active:scale-[0.97]"
                     >
                       <span
                         className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${

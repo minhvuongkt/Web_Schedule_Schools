@@ -73,14 +73,14 @@ function Modal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-zinc-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl"
+        className="max-h-[90vh] w-full max-w-lg animate-scale-in overflow-y-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-center justify-between">
@@ -267,7 +267,7 @@ export function CatalogApp({ userDisplayName }: { userDisplayName: string }) {
                   ? setSubjectModal({ mode: "create" })
                   : setRoomModal({ mode: "create" })
             }
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition duration-200 hover:bg-blue-800 active:scale-95"
           >
             <Icon name="plus" size={15} />
             {tab === "teachers" ? "Thêm giáo viên" : tab === "subjects" ? "Thêm môn học" : "Thêm phòng học"}
@@ -432,7 +432,7 @@ function TeachersTable({
   onToggle: (row: TeacherRow) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm [&>table]:min-w-2xl">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-400">
@@ -478,7 +478,7 @@ function TeachersTable({
                 <button
                   type="button"
                   onClick={() => onEdit(row)}
-                  className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition hover:border-blue-600 hover:text-blue-700"
+                  className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition duration-200 hover:border-blue-600 hover:text-blue-700 active:scale-95"
                 >
                   Sửa
                 </button>
@@ -487,8 +487,8 @@ function TeachersTable({
                   onClick={() => onToggle(row)}
                   className={`ml-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
                     row.isActive
-                      ? "border-rose-200 text-rose-700 hover:border-rose-400"
-                      : "border-emerald-200 text-emerald-700 hover:border-emerald-400"
+                      ? "border-rose-200 text-rose-700 transition duration-200 hover:border-rose-400 active:scale-95"
+                      : "border-emerald-200 text-emerald-700 transition duration-200 hover:border-emerald-400 active:scale-95"
                   }`}
                 >
                   {row.isActive ? "Ngừng dạy" : "Kích hoạt"}
@@ -538,7 +538,7 @@ function SubjectsTable({
             <button
               type="button"
               onClick={() => onEdit(row)}
-              className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition hover:border-blue-600 hover:text-blue-700"
+              className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition duration-200 hover:border-blue-600 hover:text-blue-700 active:scale-95"
             >
               Sửa
             </button>
@@ -586,7 +586,7 @@ function RoomsTable({
   onEdit: (row: RoomRow) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
+    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm [&>table]:min-w-2xl">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-400">
@@ -612,7 +612,7 @@ function RoomsTable({
                 <button
                   type="button"
                   onClick={() => onEdit(row)}
-                  className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition hover:border-blue-600 hover:text-blue-700"
+                  className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition duration-200 hover:border-blue-600 hover:text-blue-700 active:scale-95"
                 >
                   Sửa
                 </button>

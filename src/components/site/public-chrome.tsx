@@ -44,7 +44,7 @@ export function PublicHeader({ current }: { current?: "tkb" | "hsv" | "login" })
           {current === "login" ? null : (
             <Link
               href="/dang-nhap"
-              className="ml-1 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-blue-950 shadow-sm transition hover:bg-sky-100"
+              className="ml-1 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-blue-950 shadow-sm transition duration-200 hover:bg-sky-100 active:scale-95"
             >
               <Icon name="login" size={14} />
               <span className="hidden sm:inline">Đăng nhập</span>

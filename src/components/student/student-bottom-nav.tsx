@@ -39,11 +39,19 @@ export function StudentBottomNav() {
             <Link
               href={item.href}
               aria-current={item.active ? "page" : undefined}
-              className={`flex flex-col items-center gap-0.5 py-2 text-[11px] font-medium ${
-                item.active ? "text-blue-700" : "text-zinc-500 hover:text-zinc-800"
+              className={`flex flex-col items-center gap-0.5 rounded-xl py-2 text-[11px] font-medium transition duration-200 active:scale-95 ${
+                item.active
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
               }`}
             >
-              <Icon name={item.icon} size={22} />
+              <Icon
+                name={item.icon}
+                size={22}
+                className={`transition-transform duration-200 group-hover:scale-110 ${
+                  item.active ? "scale-110" : ""
+                }`}
+              />
               {item.label}
             </Link>
           </li>

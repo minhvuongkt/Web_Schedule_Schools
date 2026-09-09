@@ -59,7 +59,7 @@ function dayShortLabel(day: DayDto): string {
 function PeekCard({ peek, weekLabel }: { peek: LandingPeek | null; weekLabel: string | null }) {
   if (!peek) {
     return (
-      <div className="relative">
+      <div className="relative animate-scale-in [animation-delay:120ms]">
         <div className="absolute -inset-4 rounded-3xl bg-sky-400/20 blur-2xl" aria-hidden="true" />
         <div className="relative flex h-full min-h-80 flex-col items-center justify-center gap-4 rounded-2xl bg-white p-10 text-center shadow-2xl ring-1 ring-black/5">
           <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-blue-700">
@@ -89,7 +89,7 @@ function PeekCard({ peek, weekLabel }: { peek: LandingPeek | null; weekLabel: st
   );
 
   return (
-    <div className="relative">
+    <div className="relative animate-scale-in [animation-delay:120ms]">
       <div className="absolute -inset-4 rounded-3xl bg-sky-400/20 blur-2xl" aria-hidden="true" />
       <div className="relative overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-zinc-100 px-5 py-4">
@@ -554,42 +554,48 @@ export default async function LandingPage() {
               bubbleClass="bg-blue-50 text-blue-700"
               title="Công bố minh bạch"
               text="Trang công khai chỉ hiển thị phiên bản thời khóa biểu đã được nhà trường công bố chính thức — không bao giờ hiển thị bản nháp."
+              delay={0}
             />
             <Feature
               icon="refresh-cw"
               bubbleClass="bg-emerald-50 text-emerald-700"
               title="Thay giáo và dạy bù"
               text="Điều phối dạy thay, hủy tiết và dạy bù ngay trên phiên bản đã công bố. Học sinh thấy ngay giáo viên mới, giáo viên được thông báo tự động."
+              delay={70}
             />
             <Feature
               icon="bell"
               bubbleClass="bg-amber-50 text-amber-700"
               title="Thông báo tức thì"
               text="Đổi lịch, dạy thay, dạy bù được đẩy về giáo viên và lớp học theo thời gian thực — không cần tải lại trang."
+              delay={140}
             />
             <Feature
               icon="file-spreadsheet"
               bubbleClass="bg-teal-50 text-teal-700"
               title="Excel và in ấn"
               text="Nhập thời khóa biểu từ file Excel giữ nguyên cấu trúc gốc, xuất theo 5 phạm vi và tạo bản in sạch sẽ cho lớp, giáo viên, phòng."
+              delay={210}
             />
             <Feature
               icon="search"
               bubbleClass="bg-violet-50 text-violet-700"
               title="Tìm kiếm thông minh"
               text="Tra cứu theo lớp, môn học, giáo viên với kết quả chi tiết tiết học — gõ không dấu vẫn tìm đúng (gõ “toan” ra “Toán”)."
+              delay={280}
             />
             <Feature
               icon="smartphone"
               bubbleClass="bg-rose-50 text-rose-700"
               title="Hoạt động offline"
               text="Cài lên màn hình chính như một ứng dụng (PWA) và vẫn xem được thời khóa biểu đã tải khi đường truyền yếu hoặc mất mạng."
+              delay={350}
             />
           </div>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-4 pb-20">
+      <section className="mx-auto w-full max-w-6xl px-4 pb-20 2xl:max-w-7xl">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 to-indigo-700 px-6 py-12 text-center text-white sm:px-12">
           <div
             className="pointer-events-none absolute inset-0 opacity-50"
