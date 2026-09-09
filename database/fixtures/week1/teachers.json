@@ -1,0 +1,513 @@
+[
+  {
+    "orderNo": 1,
+    "fullName": "Nguyễn Viết Trung",
+    "specialty": "ĐHSP Ngữ Văn",
+    "position": "Hiệu trưởng",
+    "department": "VP",
+    "teaching": {
+      "subjectClasses": "Ngữ Văn 7B",
+      "lessonsPerUnit": "4/6",
+      "totalLessons": 4
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Bí thư Chi bộ\nQuản trị nhà trường",
+      "items": [
+        "Bí thư Chi bộ",
+        "Quản trị nhà trường"
+      ],
+      "lessons": null
+    },
+    "grandTotal": 4,
+    "standardWeekly": 2,
+    "variance": 2,
+    "dayOff": null
+  },
+  {
+    "orderNo": 2,
+    "fullName": "Tạ Thị Hồng Yến",
+    "specialty": "ĐHSP Toán",
+    "position": "P.Hiệu trưởng",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "HĐTN-HN 8A,B",
+      "lessonsPerUnit": "6/8",
+      "totalLessons": 6
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": null,
+      "items": [],
+      "lessons": null
+    },
+    "grandTotal": 6,
+    "standardWeekly": 4,
+    "variance": 2,
+    "dayOff": null
+  },
+  {
+    "orderNo": 3,
+    "fullName": "Đặng Thị Tuyết Đông",
+    "specialty": "ĐHSP Sử",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "LS-ĐL6,7,8,9 ( Lịch sử)",
+      "lessonsPerUnit": "4/6;2/7;4/8; 2/9",
+      "totalLessons": 12
+    },
+    "extraTeaching": {
+      "raw": "BDHSG LS&ĐL 9",
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Tổ trưởng tổ XH;",
+      "items": [
+        "Tổ trưởng tổ XH"
+      ],
+      "lessons": 3
+    },
+    "grandTotal": 15,
+    "standardWeekly": 17,
+    "variance": -2,
+    "dayOff": "Thứ 5"
+  },
+  {
+    "orderNo": 4,
+    "fullName": "Nguyễn Thị Hoài Tâm",
+    "specialty": "ĐHSP Văn",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "Văn 6, 9",
+      "lessonsPerUnit": "8/6;8/9",
+      "totalLessons": 16
+    },
+    "extraTeaching": {
+      "raw": "BDHSG Ngữ văn 9",
+      "lessons": null
+    },
+    "duties": {
+      "raw": null,
+      "items": [],
+      "lessons": null
+    },
+    "grandTotal": 16,
+    "standardWeekly": 17,
+    "variance": -1,
+    "dayOff": "Thứ 7"
+  },
+  {
+    "orderNo": 5,
+    "fullName": "Trần Anh Khoa",
+    "specialty": "ĐHSP Văn",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "Văn 7A,8;GDĐP 8",
+      "lessonsPerUnit": "4/7;8/8;2/8",
+      "totalLessons": 14
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm 8A",
+      "items": [
+        "Chủ nhiệm 8A"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 18,
+    "standardWeekly": 17,
+    "variance": 1,
+    "dayOff": "Thứ 5"
+  },
+  {
+    "orderNo": 6,
+    "fullName": "Trần Thị Sương",
+    "specialty": "ĐHSP Tiếng anh",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "T.A:7;8",
+      "lessonsPerUnit": "6/7;6/8",
+      "totalLessons": 12
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Tiếng anh 2 lớp 4",
+      "items": [
+        "Tiếng anh 2 lớp 4"
+      ],
+      "lessons": 8
+    },
+    "grandTotal": 20,
+    "standardWeekly": 17,
+    "variance": 3,
+    "dayOff": "Thứ 7"
+  },
+  {
+    "orderNo": 7,
+    "fullName": "Đỗ Thị Hồng Thắm",
+    "specialty": "ĐHSP Tiếng anh",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "T.A:6;9",
+      "lessonsPerUnit": "6/6; 6/9",
+      "totalLessons": 12
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm 6A",
+      "items": [
+        "Chủ nhiệm 6A"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 16,
+    "standardWeekly": 17,
+    "variance": -1,
+    "dayOff": "Thứ 6"
+  },
+  {
+    "orderNo": 8,
+    "fullName": "Y H'Phươn",
+    "specialty": "ĐHSP Âm nhạc",
+    "position": "GV",
+    "department": "NK",
+    "teaching": {
+      "subjectClasses": "Nghệ thuật ( ÂN) 6,7,8,9; HĐTN-HN 6",
+      "lessonsPerUnit": "2/6;2/7;2/8;2/9; 6/6",
+      "totalLessons": 14
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Phụ trách đội phân hiệu",
+      "items": [
+        "Phụ trách đội phân hiệu"
+      ],
+      "lessons": 3
+    },
+    "grandTotal": 17,
+    "standardWeekly": 17,
+    "variance": 0,
+    "dayOff": "Thứ 4"
+  },
+  {
+    "orderNo": 9,
+    "fullName": "Trần Thị Hiên",
+    "specialty": "ĐHSP Địa lí",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "LS-ĐL6,7,8,9  ( Địa lí); GDĐP 7",
+      "lessonsPerUnit": "2/6;4/7;2/8; 4/9; 2/7",
+      "totalLessons": 14
+    },
+    "extraTeaching": {
+      "raw": "BDHSG LS&ĐL 9",
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm 8B",
+      "items": [
+        "Chủ nhiệm 8B"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 18,
+    "standardWeekly": 17,
+    "variance": 1,
+    "dayOff": "Thứ 5"
+  },
+  {
+    "orderNo": 10,
+    "fullName": "Lê Thị Vy",
+    "specialty": "CĐSP Mĩ Thuật.",
+    "position": "GV",
+    "department": "NK",
+    "teaching": {
+      "subjectClasses": "Nghệ thuật ( MT)6,7,8, 9; HDTNHN 7",
+      "lessonsPerUnit": "2/6;2/7;2/8; 2/9;6/7",
+      "totalLessons": 14
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm Lớp 7A;",
+      "items": [
+        "Chủ nhiệm Lớp 7A"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 18,
+    "standardWeekly": 17,
+    "variance": 1,
+    "dayOff": "Thứ 4"
+  },
+  {
+    "orderNo": 11,
+    "fullName": "Phạm Thị Vinh",
+    "specialty": "ĐH Kinh tế -  chính trị",
+    "position": "GV",
+    "department": "XH",
+    "teaching": {
+      "subjectClasses": "GDCD 6,7;8;9; HDTNHN 9A; GDĐP 6",
+      "lessonsPerUnit": "2/6;2/7;2/8; 2/9;3/9A; 2/6",
+      "totalLessons": 13
+    },
+    "extraTeaching": {
+      "raw": "BDHSG GDCD 9",
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm 9A; Phụ trách lao động",
+      "items": [
+        "Chủ nhiệm 9A",
+        "Phụ trách lao động"
+      ],
+      "lessons": 6
+    },
+    "grandTotal": 19,
+    "standardWeekly": 17,
+    "variance": 2,
+    "dayOff": "Thứ 4"
+  },
+  {
+    "orderNo": 12,
+    "fullName": "Vũ Thị Hằng",
+    "specialty": "ĐHSP Công nghệ",
+    "position": "Tổ trưởng tổ TN",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "KHTN(lí )7,8,9; Công nghệ 8,9",
+      "lessonsPerUnit": "2/7;2/8;2/9; 4/8;4/9",
+      "totalLessons": 14
+    },
+    "extraTeaching": {
+      "raw": "BDHSG KHTN 9",
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Tổ trưởng tổ TN",
+      "items": [
+        "Tổ trưởng tổ TN"
+      ],
+      "lessons": 3
+    },
+    "grandTotal": 17,
+    "standardWeekly": 17,
+    "variance": 0,
+    "dayOff": "Thứ 7"
+  },
+  {
+    "orderNo": 13,
+    "fullName": "Nguyễn Thị Vân",
+    "specialty": "ĐHSP Toán",
+    "position": "GV",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "Toán 7,8",
+      "lessonsPerUnit": "8/7;8/8",
+      "totalLessons": 16
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Tổ phó tổ TN",
+      "items": [
+        "Tổ phó tổ TN"
+      ],
+      "lessons": 1
+    },
+    "grandTotal": 17,
+    "standardWeekly": 17,
+    "variance": 0,
+    "dayOff": "Thứ 4"
+  },
+  {
+    "orderNo": 14,
+    "fullName": "Đỗ Thị Quỳnh Như",
+    "specialty": "ĐHSP Toán",
+    "position": "GV",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "Toán 6B; 9",
+      "lessonsPerUnit": "4/6B;8/9",
+      "totalLessons": 12
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm 6B",
+      "items": [
+        "Chủ nhiệm 6B"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 16,
+    "standardWeekly": 17,
+    "variance": -1,
+    "dayOff": "Thứ 5"
+  },
+  {
+    "orderNo": 15,
+    "fullName": "Lữ Đức Mạnh",
+    "specialty": "ĐHSP Toán",
+    "position": "GV",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "KHTN 6( Lí) ;Toán 6A",
+      "lessonsPerUnit": "4/6; 4/6A",
+      "totalLessons": 8
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Hỗ trợ giáo dục người khuyết tật, phụ trách GDHN - phân luồng học sinh lớp 9, phổ cập của nhà trường",
+      "items": [
+        "Hỗ trợ giáo dục người khuyết tật, phụ trách GDHN - phân luồng học sinh lớp 9, phổ cập của nhà trường"
+      ],
+      "lessons": 3
+    },
+    "grandTotal": 11,
+    "standardWeekly": 17,
+    "variance": -6,
+    "dayOff": "Thứ 7"
+  },
+  {
+    "orderNo": 16,
+    "fullName": "Nguyễn Thị Bích Hiền",
+    "specialty": "ĐHSP Sinh",
+    "position": "GV",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "KHTN(Sinh) 6,7,8,9; CN 7",
+      "lessonsPerUnit": "2/6;4/7;4/8; 2/9;2/7",
+      "totalLessons": 14
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Công tác tổ tư vấn học sinh",
+      "items": [
+        "Công tác tổ tư vấn học sinh"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 18,
+    "standardWeekly": 17,
+    "variance": 1,
+    "dayOff": "Thứ 7"
+  },
+  {
+    "orderNo": 17,
+    "fullName": "Dương Minh Cẩm Quyên",
+    "specialty": "ĐHSP Hóa",
+    "position": "GV",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "KHTN( Hoá)  6,7,8, 9; CN 6",
+      "lessonsPerUnit": "2/6;2/7;2/8; 4/9; 2/6",
+      "totalLessons": 12
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm lớp 7B",
+      "items": [
+        "Chủ nhiệm lớp 7B"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 16,
+    "standardWeekly": 17,
+    "variance": -1,
+    "dayOff": "Thứ 6"
+  },
+  {
+    "orderNo": 18,
+    "fullName": "Y Nam",
+    "specialty": "ĐHSP Tin học",
+    "position": "GV",
+    "department": "TN",
+    "teaching": {
+      "subjectClasses": "Tin: 6,7 8,9; HDTN-HN 9B; GDĐP 9",
+      "lessonsPerUnit": "2/6;2/7;2/8; 2/9;3/9A; 2/9",
+      "totalLessons": 13
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Chủ nhiệm lớp 9B",
+      "items": [
+        "Chủ nhiệm lớp 9B"
+      ],
+      "lessons": 4
+    },
+    "grandTotal": 17,
+    "standardWeekly": 17,
+    "variance": 0,
+    "dayOff": "Thứ 6"
+  },
+  {
+    "orderNo": 19,
+    "fullName": "Lê Xuân Ngọc",
+    "specialty": "ĐHSP GDTC",
+    "position": "GV",
+    "department": "NK",
+    "teaching": {
+      "subjectClasses": "GDTC 6,7,8,9",
+      "lessonsPerUnit": "4/6;4/7;4/8; 4/9",
+      "totalLessons": 16
+    },
+    "extraTeaching": {
+      "raw": null,
+      "lessons": null
+    },
+    "duties": {
+      "raw": "Tổ trưởng tổ năng khiếu",
+      "items": [
+        "Tổ trưởng tổ năng khiếu"
+      ],
+      "lessons": 3
+    },
+    "grandTotal": 19,
+    "standardWeekly": 17,
+    "variance": 2,
+    "dayOff": "Thứ 7"
+  }
+]

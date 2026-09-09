@@ -1,0 +1,130 @@
+[
+  {
+    "code": "MATHEMATICS",
+    "name": "Toán",
+    "component": null,
+    "observedLabels": [
+      "Toán"
+    ]
+  },
+  {
+    "code": "LITERATURE",
+    "name": "Ngữ văn",
+    "component": null,
+    "observedLabels": [
+      "Văn"
+    ]
+  },
+  {
+    "code": "ENGLISH",
+    "name": "Tiếng Anh",
+    "component": null,
+    "observedLabels": [
+      "Tiếng anh"
+    ]
+  },
+  {
+    "code": "INFORMATICS",
+    "name": "Tin học",
+    "component": null,
+    "observedLabels": [
+      "Tin"
+    ]
+  },
+  {
+    "code": "PHYSICAL_EDUCATION",
+    "name": "Giáo dục thể chất",
+    "component": null,
+    "observedLabels": [
+      "GDTC"
+    ]
+  },
+  {
+    "code": "CIVIC_EDUCATION",
+    "name": "Giáo dục công dân",
+    "component": null,
+    "observedLabels": [
+      "GDCD"
+    ]
+  },
+  {
+    "code": "LOCAL_EDUCATION",
+    "name": "Giáo dục địa phương",
+    "component": null,
+    "observedLabels": [
+      "GDĐP"
+    ]
+  },
+  {
+    "code": "EXPERIENTIAL_CAREER",
+    "name": "Hoạt động trải nghiệm - hướng nghiệp",
+    "component": null,
+    "observedLabels": [
+      "HĐTN-HN"
+    ]
+  },
+  {
+    "code": "NS_PHYSICS",
+    "name": "Khoa học tự nhiên",
+    "component": "PHYSICS",
+    "observedLabels": [
+      "KHTN(L)"
+    ]
+  },
+  {
+    "code": "NS_CHEMISTRY",
+    "name": "Khoa học tự nhiên",
+    "component": "CHEMISTRY",
+    "observedLabels": [
+      "KHTN(H)"
+    ]
+  },
+  {
+    "code": "NS_BIOLOGY",
+    "name": "Khoa học tự nhiên",
+    "component": "BIOLOGY",
+    "observedLabels": [
+      "KHTN(S)"
+    ]
+  },
+  {
+    "code": "HG_HISTORY",
+    "name": "Lịch sử & Địa lí",
+    "component": "HISTORY",
+    "observedLabels": [
+      "LS&ĐL(LS)"
+    ]
+  },
+  {
+    "code": "HG_GEOGRAPHY",
+    "name": "Lịch sử & Địa lí",
+    "component": "GEOGRAPHY",
+    "observedLabels": [
+      "LS&ĐL (Địa)"
+    ]
+  },
+  {
+    "code": "ARTS_MUSIC",
+    "name": "Nghệ thuật",
+    "component": "MUSIC",
+    "observedLabels": [
+      "Nghệ Thuật (ÂN)"
+    ]
+  },
+  {
+    "code": "ARTS_VISUAL",
+    "name": "Nghệ thuật",
+    "component": "VISUAL_ARTS",
+    "observedLabels": [
+      "Nghệ Thuật( MT)"
+    ]
+  },
+  {
+    "code": "TECHNOLOGY",
+    "name": "Công nghệ",
+    "component": null,
+    "observedLabels": [
+      "CN"
+    ]
+  }
+]

@@ -1,0 +1,560 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+
+// ---------------------------------------------------------------------------
+// Typed API client for live-ops (kept local; mirrors the planner contract)
+// ---------------------------------------------------------------------------
+
+interface ApiEnvelope {
+  error?: { code: string; message: string; details?: Record<string, unknown> };
+}
+
+async function post<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const text = await res.text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = {};
+  }
+  if (!res.ok) {
+    const err = (parsed as ApiEnvelope).error;
+    throw new Error(err?.message ?? `Lỗi ${res.status}`);
+  }
+  return parsed as T;
+}
+
+interface LiveEntry {
+  id: string;
+  academicDayId: string;
+  periodId: string;
+  classId: string;
+  teacherId: string;
+  subjectId: string;
+  subjectComponentId: string | null;
+  roomId: string | null;
+  status: string;
+}
+
+interface LiveGrid {
+  version: { id: string; weekNo: number; versionNo: number; status: string; revision: number };
+  days: { id: string; date: string; dayOfWeek: number; isSchoolDay: boolean }[];
+  sessions: { id: string; code: string; labelVi: string; orderNo: number }[];
+  periods: { id: string; sessionId: string; orderNo: number; startTime: string; endTime: string | null }[];
+  entries: LiveEntry[];
+}
+
+interface ActiveSubstitution {
+  id: string;
+  status: string;
+  reason: string | null;
+  originalTeacherName: string;
+  substituteTeacherName: string;
+  entry: {
+    id: string;
+    status: string;
+    subjectName: string;
+    componentName: string | null;
+    classCode: string;
+    dayOfWeek: number;
+    date: string;
+    periodOrderNo: number;
+    startTime: string;
+  };
+}
+
+interface ActiveMakeup {
+  id: string;
+  status: string;
+  reason: string | null;
+  original: { id: string; subjectName: string; componentName: string | null; classCode: string };
+  makeup: { id: string; dayOfWeek: number; date: string; periodOrderNo: number; startTime: string } | null;
+}
+
+// ---------------------------------------------------------------------------
+
+const VI_DAY = (dow: number) => (dow === 7 ? "Chủ nhật" : `Thứ ${dow + 1}`);
+const VI_DATE = (iso: string) => {
+  const [, m, d] = iso.split("-");
+  return `${d}/${m}`;
+};
+
+const STATUS_BADGES: Record<string, { label: string; cls: string }> = {
+  NORMAL: { label: "", cls: "" },
+  SUBSTITUTED: { label: "Đã thay", cls: "bg-amber-100 text-amber-900" },
+  CANCELLED: { label: "Đã hủy", cls: "bg-zinc-200 text-zinc-600" },
+  MAKEUP: { label: "Dạy bù", cls: "bg-blue-100 text-blue-800" },
+  MOVED: { label: "Đã dời", cls: "bg-zinc-100 text-zinc-600" },
+};
+
+export function LiveOpsApp() {
+  const [weeks, setWeeks] = useState<{ id: string; weekNo: number; weekStart: string; weekEnd: string }[]>([]);
+  const [weekId, setWeekId] = useState("");
+  const [grid, setGrid] = useState<LiveGrid | null>(null);
+  const [classes, setClasses] = useState<{ id: string; code: string; grade: number }[]>([]);
+  const [teachers, setTeachers] = useState<{ id: string; code: string; fullName: string; shortName: string }[]>([]);
+  const [classId, setClassId] = useState("");
+  const [subs, setSubs] = useState<ActiveSubstitution[]>([]);
+  const [makeups, setMakeups] = useState<ActiveMakeup[]>([]);
+  const [selected, setSelected] = useState<LiveEntry | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const loadActive = useCallback(async (wid: string) => {
+    const res = await fetch(`/api/substitutions?weekId=${wid}`);
+    if (!res.ok) return;
+    const body = await res.json();
+    setSubs(body.substitutions ?? []);
+    setMakeups(body.makeups ?? []);
+  }, []);
+
+  const loadGridFor = useCallback(
+    async (wid: string) => {
+      const res = await fetch(`/api/timetable/versions?weekId=${wid}`);
+      if (!res.ok) throw new Error("Không tải được phiên bản.");
+      const body = await res.json();
+      const published = (body.versions ?? []).find((v: { status: string }) => v.status === "PUBLISHED");
+      if (!published) {
+        setGrid(null);
+        return;
+      }
+      const gridRes = await fetch(`/api/timetable/versions/${published.id}`);
+      if (!gridRes.ok) throw new Error("Không tải được lưới.");
+      setGrid(await gridRes.json());
+      await loadActive(wid);
+    },
+    [loadActive],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [w, c, t] = await Promise.all([
+          fetch("/api/weeks").then((r) => r.json()),
+          fetch("/api/classes").then((r) => r.json()),
+          fetch("/api/teachers").then((r) => r.json()),
+        ]);
+        if (cancelled) return;
+        setWeeks(w.weeks ?? []);
+        setClasses(c.classes ?? []);
+        setTeachers(t.teachers ?? []);
+        if ((w.weeks ?? []).length > 0) {
+          setWeekId(w.weeks[0].id);
+          setClassId((c.classes ?? [])[0]?.id ?? "");
+          await loadGridFor(w.weeks[0].id);
+        }
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : "Không tải được dữ liệu.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadGridFor]);
+
+  const teacherById = new Map(teachers.map((t) => [t.id, t]));
+  const entryByCell = new Map<string, LiveEntry>();
+  for (const e of grid?.entries ?? []) {
+    if (classId && e.classId !== classId) continue;
+    entryByCell.set(`${e.academicDayId}|${e.periodId}`, e);
+  }
+  const schoolDays = (grid?.days ?? []).filter((d) => d.isSchoolDay);
+
+  const run = async (label: string, fn: () => Promise<unknown>) => {
+    setBusy(true);
+    setError(null);
+    setNotice(null);
+    try {
+      await fn();
+      await loadGridFor(weekId);
+      setSelected(null);
+      setNotice(label);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Thao tác thất bại.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl space-y-4 px-4 py-4">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <select
+          value={weekId}
+          onChange={(e) => {
+            setWeekId(e.target.value);
+            setGrid(null);
+            setSelected(null);
+            loadGridFor(e.target.value).catch((err) => setError(String(err)));
+          }}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1.5"
+        >
+          {weeks.map((w) => (
+            <option key={w.id} value={w.id}>
+              Tuần {String(w.weekNo).padStart(2, "0")} ({VI_DATE(w.weekStart)} – {VI_DATE(w.weekEnd)})
+            </option>
+          ))}
+        </select>
+        <select
+          value={classId}
+          onChange={(e) => {
+            setClassId(e.target.value);
+            setSelected(null);
+          }}
+          className="rounded-md border border-zinc-300 bg-white px-2 py-1.5"
+        >
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              Lớp {c.code}
+            </option>
+          ))}
+        </select>
+        {grid && (
+          <span className="text-xs text-zinc-500">
+            Phiên bản công bố v{grid.version.versionNo} · tuần {grid.version.weekNo}
+          </span>
+        )}
+      </div>
+
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {error}
+          <button type="button" className="ml-3 underline" onClick={() => setError(null)}>
+            Đóng
+          </button>
+        </div>
+      )}
+      {notice && (
+        <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          {notice}
+          <button type="button" className="ml-3 underline" onClick={() => setNotice(null)}>
+            Đóng
+          </button>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-4 xl:flex-row">
+        <div className="min-w-0 flex-1">
+          {!grid ? (
+            <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
+              Tuần này chưa có phiên bản công bố.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {grid.sessions.map((session) => (
+                <section key={session.id}>
+                  <h3 className="mb-1.5 text-sm font-semibold text-zinc-700">{session.labelVi}</h3>
+                  <table className="w-full table-fixed border-collapse text-sm">
+                    <thead>
+                      <tr className="bg-zinc-50">
+                        <th className="w-28 border border-zinc-200 px-2 py-1.5 text-left text-xs font-medium text-zinc-500">
+                          Tiết
+                        </th>
+                        {schoolDays.map((day) => (
+                          <th key={day.id} className="border border-zinc-200 px-2 py-1.5 text-center text-xs">
+                            <span className="block font-semibold text-zinc-900">{VI_DAY(day.dayOfWeek)}</span>
+                            <span className="block text-zinc-500">{VI_DATE(day.date)}</span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grid.periods
+                        .filter((p) => p.sessionId === session.id)
+                        .map((period) => (
+                          <tr key={period.id}>
+                            <th className="border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left text-xs font-medium">
+                              Tiết {period.orderNo}
+                              <span className="block text-zinc-500">{period.startTime}</span>
+                            </th>
+                            {schoolDays.map((day) => {
+                              const entry = entryByCell.get(`${day.id}|${period.id}`);
+                              const badge = entry ? STATUS_BADGES[entry.status] : undefined;
+                              const isSel = selected?.id === entry?.id;
+                              return (
+                                <td
+                                  key={day.id}
+                                  onClick={() => entry && setSelected(entry)}
+                                  className={`cursor-pointer border border-zinc-200 px-2 py-1.5 align-top ${
+                                    isSel ? "bg-blue-50 ring-2 ring-blue-400" : entry ? "bg-white" : "bg-zinc-50/50"
+                                  }`}
+                                >
+                                  {entry ? (
+                                    <div>
+                                      <span className="block text-xs font-medium text-zinc-900">
+                                        {teacherById.get(entry.teacherId)?.shortName ?? "?"}
+                                        {badge?.label ? " · " : ""}
+                                        {badge?.label ? (
+                                          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${badge.cls}`}>
+                                            {badge.label}
+                                          </span>
+                                        ) : null}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs text-zinc-300">—</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <aside className="w-full shrink-0 space-y-4 xl:w-80">
+          {selected && grid && (
+            <EntryOpsPanel
+              entry={selected}
+              grid={grid}
+              teachers={teachers}
+              busy={busy}
+              onSubstitute={(substituteTeacherId, reason, autoConfirm) =>
+                run("Đã phân công dạy thay.", () =>
+                  post("/api/substitutions", {
+                    entryId: selected.id,
+                    substituteTeacherId,
+                    reason,
+                    autoConfirm,
+                  }),
+                )
+              }
+              onCancelLesson={(reason) =>
+                run("Đã hủy tiết học.", () =>
+                  post("/api/substitutions/cancel-lesson", { entryId: selected.id, reason }),
+                )
+              }
+              onMakeup={(academicDayId, periodId, reason) =>
+                run("Đã tạo tiết dạy bù.", () =>
+                  post("/api/substitutions/makeup", {
+                    originalEntryId: selected.id,
+                    academicDayId,
+                    periodId,
+                    reason,
+                  }),
+                )
+              }
+              onClose={() => setSelected(null)}
+            />
+          )}
+
+          {(subs.length > 0 || makeups.length > 0) && (
+            <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+              <h3 className="mb-2 text-sm font-semibold text-zinc-900">Phân công đang áp dụng</h3>
+              <ul className="space-y-2 text-xs">
+                {subs.map((s) => (
+                  <li key={s.id} className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5">
+                    <span className="block text-amber-900">
+                      {s.entry.classCode} · {s.entry.subjectName}
+                      {s.entry.componentName ? ` (${s.entry.componentName})` : ""} ·{" "}
+                      {VI_DAY(s.entry.dayOfWeek)} Tiết {s.entry.periodOrderNo}
+                    </span>
+                    <span className="block text-amber-700">
+                      {s.originalTeacherName} → <strong>{s.substituteTeacherName}</strong> ({s.status})
+                    </span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        run("Đã hủy phân công dạy thay.", () =>
+                          post("/api/substitutions/cancel", { substitutionId: s.id }),
+                        )
+                      }
+                      className="mt-1 underline"
+                    >
+                      Hủy phân công
+                    </button>
+                  </li>
+                ))}
+                {makeups.map((m) => (
+                  <li key={m.id} className="rounded-md border border-blue-200 bg-blue-50 px-2 py-1.5">
+                    <span className="block text-blue-900">
+                      Dạy bù {m.original.classCode} · {m.original.subjectName}
+                      {m.makeup
+                        ? ` → ${VI_DAY(m.makeup.dayOfWeek)} ${VI_DATE(m.makeup.date)} Tiết ${m.makeup.periodOrderNo}`
+                        : ""}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        run("Đã hủy tiết dạy bù.", () =>
+                          post("/api/substitutions/makeup-cancel", { makeupLessonId: m.id }),
+                        )
+                      }
+                      className="mt-1 underline"
+                    >
+                      Hủy dạy bù
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function EntryOpsPanel({
+  entry,
+  grid,
+  teachers,
+  busy,
+  onSubstitute,
+  onCancelLesson,
+  onMakeup,
+  onClose,
+}: {
+  entry: LiveEntry;
+  grid: LiveGrid;
+  teachers: { id: string; code: string; fullName: string; shortName: string }[];
+  busy: boolean;
+  onSubstitute: (substituteTeacherId: string, reason: string | null, autoConfirm: boolean) => void;
+  onCancelLesson: (reason: string | null) => void;
+  onMakeup: (academicDayId: string, periodId: string, reason: string | null) => void;
+  onClose: () => void;
+}) {
+  const [substituteId, setSubstituteId] = useState(teachers[0]?.id ?? "");
+  const [reason, setReason] = useState("");
+  const [makeupDayId, setMakeupDayId] = useState(grid.days[0]?.id ?? "");
+  const [makeupPeriodId, setMakeupPeriodId] = useState(grid.periods[0]?.id ?? "");
+
+  return (
+    <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="mb-3 flex items-start justify-between">
+        <h3 className="text-sm font-semibold text-zinc-900">
+          Tiết học được chọn
+          <span className="mt-0.5 block text-xs font-normal text-zinc-500">
+            {entry.status === "CANCELLED" ? "Đã hủy — có thể dạy bù" : entry.status === "SUBSTITUTED" ? "Đã có người dạy thay" : "Bình thường"}
+          </span>
+        </h3>
+        <button type="button" onClick={onClose} className="text-xs text-zinc-400 hover:text-zinc-600">
+          Đóng
+        </button>
+      </div>
+
+      {entry.status === "CANCELLED" ? (
+        <div className="space-y-3 text-sm">
+          <p className="text-xs text-zinc-500">Tạo tiết dạy bù (giáo viên gốc, môn đã hủy).</p>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500">Ngày dạy bù</label>
+            <select
+              value={makeupDayId}
+              onChange={(e) => setMakeupDayId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
+            >
+              {grid.days.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {VI_DAY(d.dayOfWeek)} · {VI_DATE(d.date)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500">Tiết</label>
+            <select
+              value={makeupPeriodId}
+              onChange={(e) => setMakeupPeriodId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
+            >
+              {grid.sessions.map((s) => (
+                <optgroup key={s.id} label={s.labelVi}>
+                  {grid.periods
+                    .filter((p) => p.sessionId === s.id)
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>
+                        Tiết {p.orderNo} · {p.startTime}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500">Lý do</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onMakeup(makeupDayId, makeupPeriodId, reason || null)}
+            className="w-full rounded-md bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+          >
+            Tạo tiết dạy bù
+          </button>
+        </div>
+      ) : entry.status === "SUBSTITUTED" ? (
+        <p className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+          Tiết học này đã có giáo viên dạy thay (xem danh sách bên dưới để hủy nếu cần).
+        </p>
+      ) : (
+        <div className="space-y-3 text-sm">
+          <div>
+            <label className="block text-xs font-medium text-zinc-500">Giáo viên dạy thay</label>
+            <select
+              value={substituteId}
+              onChange={(e) => setSubstituteId(e.target.value)}
+              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
+            >
+              {teachers
+                .filter((t) => t.id !== entry.teacherId)
+                .map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.fullName} ({t.code})
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-zinc-500">Lý do</label>
+            <input
+              type="text"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Vắng phép, công tác…"
+              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              disabled={busy || !substituteId}
+              onClick={() => onSubstitute(substituteId, reason || null, true)}
+              className="flex-1 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+            >
+              Phân công dạy thay
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onCancelLesson(reason || null)}
+              className="rounded-md border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              Hủy tiết
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

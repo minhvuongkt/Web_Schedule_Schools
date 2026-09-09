@@ -1,0 +1,83 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { cookies } from "next/headers";
+
+import { apiErrorToMessage, apiFetch } from "@/components/leadership/api";
+import { ErrorBanner } from "@/components/leadership/ErrorBanner";
+import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
+import { NotificationCard } from "@/components/notifications/NotificationCard";
+import { NotificationLiveRefresher } from "@/components/notifications/live-refresher";
+import type { NotificationsResponse } from "@/components/notifications/types";
+import { requireTeacher } from "@/server/auth/session";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Thông báo — Măng Cành",
+};
+
+export default async function TeacherNotificationsPage() {
+  await requireTeacher();
+
+  const cookieStore = await cookies();
+  const cookie = cookieStore.toString();
+
+  let notifications: NotificationsResponse["notifications"] | null = null;
+  let error: string | null = null;
+  try {
+    notifications = (
+      await apiFetch<NotificationsResponse>("/api/notifications", { cookie })
+    ).notifications;
+  } catch (caught) {
+    error = apiErrorToMessage(caught, "/gv/thong-bao");
+  }
+
+  const unreadCount =
+    notifications?.filter((notification) => notification.readAt === null).length ??
+    0;
+
+  return (
+    <main className="flex-1">
+      <div className="mx-auto w-full max-w-5xl px-4 py-6">
+        <Link
+          href="/gv"
+          className="text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline"
+        >
+          ← Lịch dạy của tôi
+        </Link>
+        <header className="mb-6 mt-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
+              Thông báo
+            </h1>
+            <p className="mt-1 text-sm text-zinc-600">
+              {unreadCount > 0
+                ? `Bạn có ${unreadCount} thông báo chưa đọc.`
+                : "Thông báo về lịch dạy và thời khóa biểu của bạn."}
+            </p>
+            <div className="mt-1">
+              <NotificationLiveRefresher />
+            </div>
+          </div>
+          {unreadCount > 0 ? <MarkAllReadButton /> : null}
+        </header>
+
+        {error ? (
+          <ErrorBanner message={error} />
+        ) : notifications && notifications.length > 0 ? (
+          <ul className="space-y-3">
+            {notifications.map((notification) => (
+              <li key={notification.id}>
+                <NotificationCard notification={notification} />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-600">
+            Chưa có thông báo nào.
+          </p>
+        )}
+      </div>
+    </main>
+  );
+}

@@ -1,0 +1,38 @@
+{
+  "school": "TRƯỜNG PTDTBT TH &THCS MĂNG CÀNH",
+  "division": "PHÂN HIỆU THCS",
+  "schoolYear": "2026-2027",
+  "week": 1,
+  "titleDateRange": "(Áp dụng từ ngày 07 tháng 9 năm 2026 đến ngày 11 tháng 9 năm 2026)",
+  "titleDateRangeNote": "Title says Mon 07/09 - Fri 11/09/2026 but the sheet contains Saturday (12/09) lessons.",
+  "sessions": [
+    {
+      "code": "MORNING",
+      "labelVi": "Sáng",
+      "firstPeriodStart": "07:00",
+      "configuredPeriods": 4,
+      "note": "Friday morning uses a 5th period (source row without period number); configure max 5 morning periods."
+    },
+    {
+      "code": "AFTERNOON",
+      "labelVi": "Chiều",
+      "firstPeriodStart": "13:00",
+      "configuredPeriods": 3
+    }
+  ],
+  "pcpnNotes": [
+    "Chưa có phân công dạy GDĐP 8 tiết /tuần.",
+    "Măng Cành, ngày 6 Tháng 9 năm 2026",
+    "HIỆU TRƯỞNG",
+    "Nguyễn Viết Trung"
+  ],
+  "tkbNotes": [
+    "Măng Đen, ngày 06 tháng 9 năm 2026",
+    "Buổi sáng tiết 1 bắt đầu lúc 7 giờ 00 phút.",
+    "Buổi chiều tiết 1 bắt đầu 13 giờ 00phút",
+    "HIỆU TRƯỞNG",
+    "Nguyễn Viết Trung"
+  ],
+  "signedBy": "Nguyễn Viết Trung",
+  "signedDate": "2026-09-06"
+}

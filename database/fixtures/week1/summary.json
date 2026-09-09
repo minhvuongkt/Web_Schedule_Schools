@@ -1,0 +1,320 @@
+{
+  "teacherCount": 19,
+  "classCount": 8,
+  "entryCount": 236,
+  "entriesWithInferredPeriod": 4,
+  "perTeacher": [
+    {
+      "fullName": "Nguyễn Viết Trung",
+      "pcpnTeachingTotal": 4,
+      "tkbScheduledCount": 4,
+      "diff": 0,
+      "dayOff": null
+    },
+    {
+      "fullName": "Tạ Thị Hồng Yến",
+      "pcpnTeachingTotal": 6,
+      "tkbScheduledCount": 6,
+      "diff": 0,
+      "dayOff": null
+    },
+    {
+      "fullName": "Đặng Thị Tuyết Đông",
+      "pcpnTeachingTotal": 12,
+      "tkbScheduledCount": 12,
+      "diff": 0,
+      "dayOff": "Thứ 5"
+    },
+    {
+      "fullName": "Nguyễn Thị Hoài Tâm",
+      "pcpnTeachingTotal": 16,
+      "tkbScheduledCount": 16,
+      "diff": 0,
+      "dayOff": "Thứ 7"
+    },
+    {
+      "fullName": "Trần Anh Khoa",
+      "pcpnTeachingTotal": 14,
+      "tkbScheduledCount": 14,
+      "diff": 0,
+      "dayOff": "Thứ 5"
+    },
+    {
+      "fullName": "Trần Thị Sương",
+      "pcpnTeachingTotal": 12,
+      "tkbScheduledCount": 12,
+      "diff": 0,
+      "dayOff": "Thứ 7"
+    },
+    {
+      "fullName": "Đỗ Thị Hồng Thắm",
+      "pcpnTeachingTotal": 12,
+      "tkbScheduledCount": 12,
+      "diff": 0,
+      "dayOff": "Thứ 6"
+    },
+    {
+      "fullName": "Y H'Phươn",
+      "pcpnTeachingTotal": 14,
+      "tkbScheduledCount": 14,
+      "diff": 0,
+      "dayOff": "Thứ 4"
+    },
+    {
+      "fullName": "Trần Thị Hiên",
+      "pcpnTeachingTotal": 14,
+      "tkbScheduledCount": 14,
+      "diff": 0,
+      "dayOff": "Thứ 5"
+    },
+    {
+      "fullName": "Lê Thị Vy",
+      "pcpnTeachingTotal": 14,
+      "tkbScheduledCount": 14,
+      "diff": 0,
+      "dayOff": "Thứ 4"
+    },
+    {
+      "fullName": "Phạm Thị Vinh",
+      "pcpnTeachingTotal": 13,
+      "tkbScheduledCount": 13,
+      "diff": 0,
+      "dayOff": "Thứ 4"
+    },
+    {
+      "fullName": "Vũ Thị Hằng",
+      "pcpnTeachingTotal": 14,
+      "tkbScheduledCount": 14,
+      "diff": 0,
+      "dayOff": "Thứ 7"
+    },
+    {
+      "fullName": "Nguyễn Thị Vân",
+      "pcpnTeachingTotal": 16,
+      "tkbScheduledCount": 16,
+      "diff": 0,
+      "dayOff": "Thứ 4"
+    },
+    {
+      "fullName": "Đỗ Thị Quỳnh Như",
+      "pcpnTeachingTotal": 12,
+      "tkbScheduledCount": 12,
+      "diff": 0,
+      "dayOff": "Thứ 5"
+    },
+    {
+      "fullName": "Lữ Đức Mạnh",
+      "pcpnTeachingTotal": 8,
+      "tkbScheduledCount": 8,
+      "diff": 0,
+      "dayOff": "Thứ 7"
+    },
+    {
+      "fullName": "Nguyễn Thị Bích Hiền",
+      "pcpnTeachingTotal": 14,
+      "tkbScheduledCount": 14,
+      "diff": 0,
+      "dayOff": "Thứ 7"
+    },
+    {
+      "fullName": "Dương Minh Cẩm Quyên",
+      "pcpnTeachingTotal": 12,
+      "tkbScheduledCount": 12,
+      "diff": 0,
+      "dayOff": "Thứ 6"
+    },
+    {
+      "fullName": "Y Nam",
+      "pcpnTeachingTotal": 13,
+      "tkbScheduledCount": 13,
+      "diff": 0,
+      "dayOff": "Thứ 6"
+    },
+    {
+      "fullName": "Lê Xuân Ngọc",
+      "pcpnTeachingTotal": 16,
+      "tkbScheduledCount": 16,
+      "diff": 0,
+      "dayOff": "Thứ 7"
+    }
+  ],
+  "coverage": {
+    "6A|Toán|Lữ Đức Mạnh": 4,
+    "6B|Tin|Y Nam": 1,
+    "7A|KHTN(L)|Vũ Thị Hằng": 1,
+    "7B|Toán|Nguyễn Thị Vân": 4,
+    "8A|Tiếng anh|Trần Thị Sương": 3,
+    "8B|KHTN(H)|Dương Minh Cẩm Quyên": 1,
+    "9A|GDTC|Lê Xuân Ngọc": 2,
+    "9B|Toán|Đỗ Thị Quỳnh Như": 4,
+    "6B|KHTN(S)|Nguyễn Thị Bích Hiền": 1,
+    "7A|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "8B|Tin|Y Nam": 1,
+    "9A|Tiếng anh|Đỗ Thị Hồng Thắm": 3,
+    "6A|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 2,
+    "6B|KHTN(L)|Lữ Đức Mạnh": 2,
+    "7A|Văn|Trần Anh Khoa": 4,
+    "7B|KHTN(L)|Vũ Thị Hằng": 1,
+    "8A|Toán|Nguyễn Thị Vân": 4,
+    "8B|Tiếng anh|Trần Thị Sương": 3,
+    "9A|Văn|Nguyễn Thị Hoài Tâm": 4,
+    "9B|LS&ĐL (Địa)|Trần Thị Hiên": 2,
+    "6A|KHTN(L)|Lữ Đức Mạnh": 2,
+    "6B|Tiếng anh|Đỗ Thị Hồng Thắm": 3,
+    "7B|GDTC|Lê Xuân Ngọc": 2,
+    "9B|CN|Vũ Thị Hằng": 2,
+    "6A|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "6B|GDTC|Lê Xuân Ngọc": 2,
+    "7A|LS&ĐL (Địa)|Trần Thị Hiên": 2,
+    "7B|GDCD|Phạm Thị Vinh": 1,
+    "8A|KHTN(H)|Dương Minh Cẩm Quyên": 1,
+    "8B|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "9A|CN|Vũ Thị Hằng": 2,
+    "9B|Tiếng anh|Đỗ Thị Hồng Thắm": 3,
+    "6A|CN|Dương Minh Cẩm Quyên": 1,
+    "7A|Toán|Nguyễn Thị Vân": 4,
+    "7B|Tin|Y Nam": 1,
+    "8A|KHTN(S)|Nguyễn Thị Bích Hiền": 2,
+    "8B|GDCD|Phạm Thị Vinh": 1,
+    "6A|GDTC|Lê Xuân Ngọc": 2,
+    "7A|Tin|Y Nam": 1,
+    "7B|CN|Nguyễn Thị Bích Hiền": 1,
+    "8A|GDCD|Phạm Thị Vinh": 1,
+    "8B|CN|Vũ Thị Hằng": 2,
+    "9A|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "9B|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "6B|Văn|Nguyễn Thị Hoài Tâm": 4,
+    "7A|GDTC|Lê Xuân Ngọc": 2,
+    "7B|LS&ĐL (Địa)|Trần Thị Hiên": 2,
+    "8A|CN|Vũ Thị Hằng": 2,
+    "8B|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 2,
+    "9A|Toán|Đỗ Thị Quỳnh Như": 4,
+    "9B|KHTN(H)|Dương Minh Cẩm Quyên": 2,
+    "7B|KHTN(S)|Nguyễn Thị Bích Hiền": 2,
+    "8A|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 2,
+    "8B|LS&ĐL (Địa)|Trần Thị Hiên": 1,
+    "9B|GDTC|Lê Xuân Ngọc": 2,
+    "6A|Tiếng anh|Đỗ Thị Hồng Thắm": 3,
+    "6B|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "7A|KHTN(S)|Nguyễn Thị Bích Hiền": 2,
+    "7B|Văn|Nguyễn Viết Trung": 4,
+    "8B|Văn|Trần Anh Khoa": 4,
+    "9A|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "9B|Văn|Nguyễn Thị Hoài Tâm": 4,
+    "6B|KHTN(H)|Dương Minh Cẩm Quyên": 1,
+    "9A|Tin|Y Nam": 1,
+    "6A|Tin|Y Nam": 1,
+    "6B|Toán|Đỗ Thị Quỳnh Như": 4,
+    "7A|Tiếng anh|Trần Thị Sương": 3,
+    "7B|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 1,
+    "8A|GDTC|Lê Xuân Ngọc": 2,
+    "6A|KHTN(H)|Dương Minh Cẩm Quyên": 1,
+    "6A|Văn|Nguyễn Thị Hoài Tâm": 4,
+    "7B|Tiếng anh|Trần Thị Sương": 3,
+    "8A|Văn|Trần Anh Khoa": 4,
+    "8B|HĐTN-HN|Tạ Thị Hồng Yến": 3,
+    "9A|LS&ĐL (Địa)|Trần Thị Hiên": 2,
+    "6B|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 2,
+    "9A|KHTN(H)|Dương Minh Cẩm Quyên": 2,
+    "9B|HĐTN-HN|Y Nam": 3,
+    "6A|GDĐP|Phạm Thị Vinh": 1,
+    "7B|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "8A|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "9B|KHTN(S)|Nguyễn Thị Bích Hiền": 1,
+    "6A|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "8A|KHTN(L)|Vũ Thị Hằng": 1,
+    "8B|KHTN(S)|Nguyễn Thị Bích Hiền": 2,
+    "6B|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "7A|CN|Nguyễn Thị Bích Hiền": 1,
+    "8A|Tin|Y Nam": 1,
+    "8B|GDTC|Lê Xuân Ngọc": 2,
+    "9A|KHTN(L)|Vũ Thị Hằng": 1,
+    "9B|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "6B|GDĐP|Phạm Thị Vinh": 1,
+    "7A|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "8A|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "8B|KHTN(L)|Vũ Thị Hằng": 1,
+    "9A|GDĐP|Y Nam": 1,
+    "6A|GDCD|Phạm Thị Vinh": 1,
+    "6B|HĐTN-HN|Y H'Phươn": 3,
+    "7A|HĐTN-HN|Lê Thị Vy": 3,
+    "8A|HĐTN-HN|Tạ Thị Hồng Yến": 3,
+    "9B|Tin|Y Nam": 1,
+    "9A|KHTN(S)|Nguyễn Thị Bích Hiền": 1,
+    "9B|GDCD|Phạm Thị Vinh": 1,
+    "7B|KHTN(H)|Dương Minh Cẩm Quyên": 1,
+    "9B|GDĐP|Y Nam": 1,
+    "6A|KHTN(S)|Nguyễn Thị Bích Hiền": 1,
+    "7B|GDĐP|Trần Thị Hiên": 1,
+    "9A|GDCD|Phạm Thị Vinh": 1,
+    "9B|KHTN(L)|Vũ Thị Hằng": 1,
+    "7B|Nghệ Thuật( MT)|Lê Thị Vy": 1,
+    "9B|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 1,
+    "6B|GDCD|Phạm Thị Vinh": 1,
+    "8B|Nghệ Thuật (ÂN)|Y H'Phươn": 1,
+    "6A|LS&ĐL (Địa)|Trần Thị Hiên": 1,
+    "7A|GDCD|Phạm Thị Vinh": 1,
+    "8B|Toán|Nguyễn Thị Vân": 4,
+    "9A|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 1,
+    "6A|HĐTN-HN|Y H'Phươn": 3,
+    "6B|LS&ĐL (Địa)|Trần Thị Hiên": 1,
+    "7A|KHTN(H)|Dương Minh Cẩm Quyên": 1,
+    "7B|HĐTN-HN|Lê Thị Vy": 3,
+    "9A|HĐTN-HN|Phạm Thị Vinh": 3,
+    "6B|CN|Dương Minh Cẩm Quyên": 1,
+    "7A|GDĐP|Trần Thị Hiên": 1,
+    "8A|GDĐP|Trần Anh Khoa": 1,
+    "7A|LS&ĐL(LS)|Đặng Thị Tuyết Đông": 1,
+    "8A|LS&ĐL (Địa)|Trần Thị Hiên": 1,
+    "8B|GDĐP|Trần Anh Khoa": 1
+  },
+  "daySessionLayout": {
+    "Thứ 2|MORNING": {
+      "maxPeriod": 4,
+      "entries": 32
+    },
+    "Thứ 2|AFTERNOON": {
+      "maxPeriod": 3,
+      "entries": 24
+    },
+    "Thứ 3|MORNING": {
+      "maxPeriod": 4,
+      "entries": 32
+    },
+    "Thứ 4|MORNING": {
+      "maxPeriod": 4,
+      "entries": 32
+    },
+    "Thứ 5|MORNING": {
+      "maxPeriod": 4,
+      "entries": 32
+    },
+    "Thứ 5|AFTERNOON": {
+      "maxPeriod": 3,
+      "entries": 24
+    },
+    "Thứ 6|MORNING": {
+      "maxPeriod": 5,
+      "entries": 36
+    },
+    "Thứ 7|MORNING": {
+      "maxPeriod": 3,
+      "entries": 24
+    }
+  },
+  "findings": [
+    {
+      "row": 40,
+      "type": "PERIOD_INFERRED",
+      "detail": "Thứ 6 MORNING period 5 inferred (no period number in source)"
+    },
+    {
+      "type": "TEACHER_UNAVAILABLE",
+      "detail": "Trần Anh Khoa teaches 7A Văn on Thứ 5 MORNING p1 but PCPN lists day off = Thứ 5 (source row 29)"
+    },
+    {
+      "type": "TEACHER_UNAVAILABLE",
+      "detail": "Trần Anh Khoa teaches 7A Văn on Thứ 5 MORNING p2 but PCPN lists day off = Thứ 5 (source row 30)"
+    }
+  ]
+}

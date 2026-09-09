@@ -1,0 +1,568 @@
+// School Timetable Management System — Prisma schema
+// See docs/architecture.md §4 and docs/database.md (when created).
+//
+// Conventions:
+// - IDs are cuid() strings; business codes (school.code, teacher.code,
+//   class.code, subject.code) are stable internal identifiers.
+// - Calendar entities store real dates (@db.Date); weekday is derived data
+//   (ISO 1=Mon..7=Sun) kept for validation convenience.
+// - TeachingAssignment = expected workload (who should teach what, how much).
+//   TimetableEntry = actual schedule (when/where a lesson occurs).
+//   These two concepts are never merged.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Organization & academic calendar
+// ---------------------------------------------------------------------------
+
+model School {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  division  String? // e.g. "PHÂN HIỆU THCS"
+  timezone  String   @default("Asia/Ho_Chi_Minh")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  schoolYears SchoolYear[]
+  departments Department[]
+  teachers    Teacher[]
+  students    Student[]
+  classes     Class[]
+  subjects    Subject[]
+  rooms       Room[]
+  users       User[]
+}
+
+model SchoolYear {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  name      String // "2026-2027"
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  status    String   @default("ACTIVE") // ACTIVE | ARCHIVED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  semesters             Semester[]
+  weeks                 Week[]
+  classes               Class[]
+  sessionConfigs        SessionConfig[]
+  periods               Period[]
+  teachingAssignments   TeachingAssignment[]
+  teachingRequirements  TeachingRequirement[]
+  teacherAvailabilities TeacherAvailability[]
+  workloadPolicies      WorkloadPolicy[]
+  holidays              Holiday[]
+  specialEvents         SpecialEvent[]
+
+  @@unique([schoolId, name])
+}
+
+model Semester {
+  id           String     @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id])
+  name         String // "Học kỳ 1"
+  startDate    DateTime   @db.Date
+  endDate      DateTime   @db.Date
+  weeks        Week[]
+
+  @@unique([schoolYearId, name])
+}
+
+model Week {
+  id         String   @id @default(cuid())
+  semesterId String
+  semester   Semester @relation(fields: [semesterId], references: [id])
+  weekNo     Int
+  startDate  DateTime @db.Date
+  endDate    DateTime @db.Date
+  status     String   @default("PLANNED") // PLANNED | ACTIVE | COMPLETED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  academicDays AcademicDay[]
+  versions     TimetableVersion[]
+  schoolYear   SchoolYear?        @relation(fields: [schoolYearId], references: [id])
+  schoolYearId String?
+
+  @@unique([semesterId, weekNo])
+}
+
+model AcademicDay {
+  id          String   @id @default(cuid())
+  weekId      String
+  week        Week     @relation(fields: [weekId], references: [id])
+  date        DateTime @db.Date
+  dayOfWeek   Int // ISO: 1=Mon .. 7=Sun
+  isSchoolDay Boolean  @default(true)
+  label       String? // holiday / event label
+
+  entries TimetableEntry[]
+
+  @@unique([weekId, date])
+  @@index([date])
+}
+
+model SessionConfig {
+  id               String     @id @default(cuid())
+  schoolYearId     String
+  schoolYear       SchoolYear @relation(fields: [schoolYearId], references: [id])
+  code             String // MORNING | AFTERNOON
+  labelVi          String // Sáng | Chiều
+  orderNo          Int
+  firstPeriodStart String // "07:00"
+
+  periods Period[]
+
+  @@unique([schoolYearId, code])
+}
+
+model Period {
+  id           String        @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear    @relation(fields: [schoolYearId], references: [id])
+  sessionId    String
+  session      SessionConfig @relation(fields: [sessionId], references: [id])
+  orderNo      Int // 1..n within session
+  startTime    String // "07:00" (seeded, editable — durations are config)
+  endTime      String? // "07:50"
+  labelVi      String? // "Tiết 1"
+
+  entries TimetableEntry[]
+
+  @@unique([sessionId, orderNo])
+}
+
+// ---------------------------------------------------------------------------
+// People & master data
+// ---------------------------------------------------------------------------
+
+model Department {
+  id       String @id @default(cuid())
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id])
+  code     String // VP | TN | XH | NK
+  name     String
+
+  teachers Teacher[]
+
+  @@unique([schoolId, code])
+}
+
+model Teacher {
+  id           String      @id @default(cuid())
+  schoolId     String
+  school       School      @relation(fields: [schoolId], references: [id])
+  code         String      @unique // stable internal code, e.g. T01
+  fullName     String // normalized (apostrophes folded)
+  shortName    String? // display alias, e.g. "C.Vân"
+  specialty    String? // "ĐHSP Toán"
+  position     String? // "GV" | "Hiệu trưởng" | "P.Hiệu trưởng" | "Tổ trưởng tổ TN"
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  isActive     Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  userId            String?               @unique
+  user              User?                 @relation("TeacherUser", fields: [userId], references: [id])
+  aliases           TeacherAlias[]
+  assignments       TeachingAssignment[]
+  availability      TeacherAvailability[]
+  entries           TimetableEntry[]      @relation("EntryTeacher")
+  homeroomClasses   Class[]               @relation("HomeroomTeacher")
+  substitutionsFrom Substitution[]        @relation("SubstitutionOriginal")
+  substitutionsTo   Substitution[]        @relation("SubstitutionSubstitute")
+
+  @@index([schoolId])
+}
+
+model TeacherAlias {
+  id        String  @id @default(cuid())
+  teacherId String
+  teacher   Teacher @relation(fields: [teacherId], references: [id])
+  alias     String // exact label used in Excel TKB, e.g. "C. Tâm"
+
+  @@unique([teacherId, alias])
+  @@index([alias])
+}
+
+model TeacherAvailability {
+  id           String     @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id])
+  teacherId    String
+  teacher      Teacher    @relation(fields: [teacherId], references: [id])
+  dayOfWeek    Int // ISO 1..7
+  status       String     @default("UNAVAILABLE") // AVAILABLE | UNAVAILABLE | PREFERRED
+
+  @@unique([schoolYearId, teacherId, dayOfWeek])
+  @@index([teacherId])
+}
+
+model Student {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  code      String   @unique
+  fullName  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId      String?                  @unique
+  user        User?                    @relation("StudentUser", fields: [userId], references: [id])
+  memberships StudentClassMembership[]
+}
+
+model Class {
+  id                String     @id @default(cuid())
+  schoolId          String
+  school            School     @relation(fields: [schoolId], references: [id])
+  schoolYearId      String
+  schoolYear        SchoolYear @relation(fields: [schoolYearId], references: [id])
+  code              String // "8A"
+  grade             Int // 8
+  name              String?
+  homeroomTeacherId String?
+  homeroomTeacher   Teacher?   @relation("HomeroomTeacher", fields: [homeroomTeacherId], references: [id])
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  memberships  StudentClassMembership[]
+  assignments  TeachingAssignment[]
+  requirements TeachingRequirement[]
+  entries      TimetableEntry[]
+
+  @@unique([schoolYearId, code])
+  @@index([schoolId, grade])
+}
+
+model StudentClassMembership {
+  id        String    @id @default(cuid())
+  studentId String
+  student   Student   @relation(fields: [studentId], references: [id])
+  classId   String
+  class     Class     @relation(fields: [classId], references: [id])
+  role      String? // "Lớp trưởng"
+  startDate DateTime? @db.Date
+  endDate   DateTime? @db.Date
+
+  @@unique([studentId, classId])
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  code      String   @unique // MATHEMATICS | NATURAL_SCIENCE | ...
+  name      String // "Toán"
+  category  String? // grouping label
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  components   SubjectComponent[]
+  assignments  TeachingAssignment[]
+  requirements TeachingRequirement[]
+  entries      TimetableEntry[]
+}
+
+model SubjectComponent {
+  id        String  @id @default(cuid())
+  subjectId String
+  subject   Subject @relation(fields: [subjectId], references: [id])
+  code      String // PHYSICS | CHEMISTRY | MUSIC | ...
+  name      String // "Lý"
+
+  assignments  TeachingAssignment[]
+  requirements TeachingRequirement[]
+  entries      TimetableEntry[]
+
+  @@unique([subjectId, code])
+}
+
+model Room {
+  id       String  @id @default(cuid())
+  schoolId String
+  school   School  @relation(fields: [schoolId], references: [id])
+  code     String  @unique
+  name     String?
+  roomType String?
+  capacity Int?
+
+  entries TimetableEntry[]
+}
+
+// ---------------------------------------------------------------------------
+// Assignments & requirements (expected workload)
+// ---------------------------------------------------------------------------
+
+model TeachingAssignment {
+  id                 String            @id @default(cuid())
+  schoolYearId       String
+  schoolYear         SchoolYear        @relation(fields: [schoolYearId], references: [id])
+  teacherId          String
+  teacher            Teacher           @relation(fields: [teacherId], references: [id])
+  classId            String? // null: duty or out-of-scope teaching
+  class              Class?            @relation(fields: [classId], references: [id])
+  subjectId          String?
+  subject            Subject?          @relation(fields: [subjectId], references: [id])
+  subjectComponentId String?
+  subjectComponent   SubjectComponent? @relation(fields: [subjectComponentId], references: [id])
+  lessonsPerWeek     Int
+  assignmentType     String            @default("TEACHING") // TEACHING | DUTY
+  notes              String?
+  sourceRaw          String? // preserved PCPN raw string (import traceability)
+  isActive           Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@index([schoolYearId, teacherId])
+  @@index([schoolYearId, classId])
+}
+
+// Curriculum demand independent of teacher supply, e.g. the PCPN note
+// "Chưa có phân công dạy GDĐP 8 tiết/tuần" — a requirement without an
+// assignment. Kept separate so unmet demand is data, not a footnote.
+model TeachingRequirement {
+  id                 String            @id @default(cuid())
+  schoolYearId       String
+  schoolYear         SchoolYear        @relation(fields: [schoolYearId], references: [id])
+  grade              Int? // 6..9
+  classId            String?
+  class              Class?            @relation(fields: [classId], references: [id])
+  subjectId          String
+  subject            Subject           @relation(fields: [subjectId], references: [id])
+  subjectComponentId String?
+  subjectComponent   SubjectComponent? @relation(fields: [subjectComponentId], references: [id])
+  lessonsPerWeek     Int
+  notes              String?
+
+  @@index([schoolYearId, grade])
+}
+
+model WorkloadPolicy {
+  id           String     @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id])
+  position     String // "GV" | "Hiệu trưởng" | "P.Hệu trưởng" | ...
+  weeklyQuota  Int // standard weekly lessons
+
+  @@unique([schoolYearId, position])
+}
+
+// ---------------------------------------------------------------------------
+// Timetable (actual schedule) & versioning
+// ---------------------------------------------------------------------------
+
+model TimetableVersion {
+  id          String    @id @default(cuid())
+  weekId      String
+  week        Week      @relation(fields: [weekId], references: [id])
+  versionNo   Int
+  status      String    @default("DRAFT") // DRAFT|REVIEW|APPROVED|PUBLISHED|ARCHIVED
+  revision    Int       @default(0) // optimistic concurrency counter
+  name        String?
+  createdBy   String?
+  submittedBy String?
+  approvedBy  String?
+  publishedBy String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  publishedAt DateTime?
+
+  entries TimetableEntry[]
+
+  @@unique([weekId, versionNo])
+  @@index([status])
+}
+
+model TimetableEntry {
+  id                 String            @id @default(cuid())
+  versionId          String
+  version            TimetableVersion  @relation(fields: [versionId], references: [id])
+  academicDayId      String
+  academicDay        AcademicDay       @relation(fields: [academicDayId], references: [id])
+  periodId           String
+  period             Period            @relation(fields: [periodId], references: [id])
+  classId            String
+  class              Class             @relation(fields: [classId], references: [id])
+  subjectId          String
+  subject            Subject           @relation(fields: [subjectId], references: [id])
+  subjectComponentId String?
+  subjectComponent   SubjectComponent? @relation(fields: [subjectComponentId], references: [id])
+  teacherId          String
+  teacher            Teacher           @relation("EntryTeacher", fields: [teacherId], references: [id])
+  roomId             String?
+  room               Room?             @relation(fields: [roomId], references: [id])
+  status             String            @default("NORMAL") // NORMAL|MOVED|CANCELLED|SUBSTITUTED|MAKEUP
+  notes              String?
+  sourceRow          Int? // Excel row for imported data (traceability)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  substitution Substitution?
+  makeupSource MakeupLesson[] @relation("MakeupOriginal")
+  makeupResult MakeupLesson?  @relation("MakeupResult")
+
+  // Hard uniqueness invariants are enforced by PARTIAL unique indexes created
+  // in SQL migrations (see prisma/migrations — Prisma cannot express
+  // `WHERE status != 'CANCELLED'` in schema). Class/teacher/room slots must
+  // stay reusable after a lesson is CANCELLED, and a SUBSTITUTED entry must
+  // not double-book its original teacher.
+  @@index([versionId, academicDayId, periodId, classId])
+  @@index([versionId, classId])
+  @@index([versionId, teacherId])
+  @@index([academicDayId, periodId, teacherId])
+}
+
+// ---------------------------------------------------------------------------
+// Substitutions & makeup lessons
+// ---------------------------------------------------------------------------
+
+model Substitution {
+  id                  String         @id @default(cuid())
+  entryId             String         @unique
+  entry               TimetableEntry @relation(fields: [entryId], references: [id])
+  originalTeacherId   String
+  originalTeacher     Teacher        @relation("SubstitutionOriginal", fields: [originalTeacherId], references: [id])
+  substituteTeacherId String
+  substituteTeacher   Teacher        @relation("SubstitutionSubstitute", fields: [substituteTeacherId], references: [id])
+  reason              String?
+  status              String         @default("PENDING") // PENDING | CONFIRMED | CANCELLED
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model MakeupLesson {
+  id              String          @id @default(cuid())
+  originalEntryId String
+  originalEntry   TimetableEntry  @relation("MakeupOriginal", fields: [originalEntryId], references: [id])
+  makeupEntryId   String?         @unique
+  makeupEntry     TimetableEntry? @relation("MakeupResult", fields: [makeupEntryId], references: [id])
+  reason          String?
+  status          String          @default("PLANNED") // PLANNED | SCHEDULED | CANCELLED
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+// ---------------------------------------------------------------------------
+// Calendar exceptions
+// ---------------------------------------------------------------------------
+
+model Holiday {
+  id           String     @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id])
+  name         String
+  startDate    DateTime   @db.Date
+  endDate      DateTime   @db.Date
+  scope        String     @default("SCHOOL") // SCHOOL | GRADE | CLASS
+  grade        Int?
+  classId      String?
+
+  @@index([schoolYearId, startDate])
+}
+
+model SpecialEvent {
+  id           String     @id @default(cuid())
+  schoolYearId String
+  schoolYear   SchoolYear @relation(fields: [schoolYearId], references: [id])
+  name         String
+  date         DateTime   @db.Date
+  description  String?
+
+  @@index([schoolYearId, date])
+}
+
+// ---------------------------------------------------------------------------
+// Notifications
+// ---------------------------------------------------------------------------
+
+model Notification {
+  id             String   @id @default(cuid())
+  type           String // TIMETABLE_PUBLISHED | TIMETABLE_CHANGED | ...
+  title          String
+  body           String
+  payload        Json?
+  idempotencyKey String?  @unique
+  createdAt      DateTime @default(now())
+
+  recipients NotificationRecipient[]
+}
+
+model NotificationRecipient {
+  id             String       @id @default(cuid())
+  notificationId String
+  notification   Notification @relation(fields: [notificationId], references: [id])
+  userId         String
+  user           User         @relation(fields: [userId], references: [id])
+  readAt         DateTime?
+
+  @@unique([notificationId, userId])
+}
+
+// ---------------------------------------------------------------------------
+// Users, auth & audit
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  schoolId     String?
+  school       School?  @relation(fields: [schoolId], references: [id])
+  username     String   @unique
+  email        String?  @unique
+  passwordHash String
+  displayName  String
+  role         String   @default("TEACHER") // SUPER_ADMIN|TIMETABLE_ADMIN|PRINCIPAL|TEACHER|STUDENT|PARENT
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  teacher       Teacher?                @relation("TeacherUser")
+  student       Student?                @relation("StudentUser")
+  authSessions  AuthSession[]
+  notifications NotificationRecipient[]
+}
+
+// Recipients reference users with a proper FK; deletion of a user cascades
+// only their recipient rows, never the notification itself.
+model AuthSession {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String? // user id at action time (no FK: audit outlives users)
+  actorName  String? // denormalized for durability
+  action     String // CREATE|UPDATE|DELETE|MOVE|IMPORT|EXPORT|SUBMIT_REVIEW|APPROVE|PUBLISH|ROLLBACK|SUBSTITUTE|MAKEUP|LOGIN
+  entityType String
+  entityId   String?
+  before     Json?
+  after      Json?
+  reason     String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
