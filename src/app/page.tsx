@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   description:
-    "Hệ thống thời khóa biểu điện tử Trường PTDTBT TH & THCS Măng Cành — xem lịch học theo tuần, thông báo thay giáo, dạy bù và quản lý thời khóa biểu toàn trường.",
+    "Hệ thống thời khóa biểu điện tử Trường PTDTBT TH & THCS Măng Cành — xem lịch học theo tuần, thông báo thay giáo viên, dạy bù và quản lý thời khóa biểu toàn trường.",
 };
 
 /**
@@ -139,17 +139,15 @@ function PeekCard({ peek, weekLabel }: { peek: LandingPeek | null; weekLabel: st
                 {dayColumns.map((day) => (
                   <th
                     key={day.date}
-                    className={`rounded-md px-1 py-1.5 text-[11px] font-semibold ${
-                      day.isToday
-                        ? "bg-emerald-700 text-white"
-                        : "bg-stone-100 text-stone-500"
-                    }`}
+                    className={`rounded-md px-1 py-1.5 text-[11px] font-semibold ${day.isToday
+                      ? "bg-emerald-700 text-white"
+                      : "bg-stone-100 text-stone-500"
+                      }`}
                   >
                     <span className="block">{dayShortLabel(day)}</span>
                     <span
-                      className={`block text-[10px] font-normal ${
-                        day.isToday ? "text-emerald-100" : "text-stone-400"
-                      }`}
+                      className={`block text-[10px] font-normal ${day.isToday ? "text-emerald-100" : "text-stone-400"
+                        }`}
                     >
                       {day.date.slice(8, 10)}/{day.date.slice(5, 7)}
                     </span>
@@ -374,7 +372,7 @@ export default async function LandingPage() {
               Trường PTDTBT TH và THCS Măng Cành
             </p>
             <p className="mt-4 max-w-lg text-base leading-relaxed text-stone-600">
-              Xem lịch học theo tuần của từng lớp, nhận thông báo thay giáo, dạy bù
+              Xem lịch học theo tuần của từng lớp, nhận thông báo thay giáo viên, dạy bù
               và quản lý thời khóa biểu toàn trường — mọi thứ trong một nơi.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -549,7 +547,7 @@ export default async function LandingPage() {
               bullets={[
                 "Soạn thời khóa biểu kéo-thả, kiểm tra xung đột tự động",
                 "Nhập và xuất Excel, in ấn, chia sẻ qua mã QR",
-                "Điều phối thay giáo, dạy bù và xem nhật ký hệ thống",
+                "Điều phối thay giáo viên, dạy bù và xem nhật ký hệ thống",
               ]}
               href="/dang-nhap?next=%2Fadmin"
               cta="Đăng nhập vào trình soạn"
