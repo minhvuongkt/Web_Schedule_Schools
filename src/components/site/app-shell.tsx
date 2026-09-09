@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import { logoutAction } from "@/app/dang-nhap/actions";
 import { roleLabelVi } from "@/components/leadership/labels";
@@ -16,9 +16,12 @@ import { can, type Permission, type Role } from "@/server/domain/roles";
  * items overflowed and obscured text on narrow screens.
  *
  * - ≥lg: fixed left sidebar (w-60) — brand, grouped nav (RBAC-filtered),
- *   user chip + logout pinned at the bottom.
+ *   user chip + logout pinned at the bottom. A "Thu gọn" toggle collapses
+ *   it to icon-only rails (w-16, labels → title tooltips); the choice is
+ *   remembered in localStorage.
  * - <lg: sticky top bar (h-14) with a menu button; the sidebar becomes a
- *   slide-in drawer with a backdrop (body scroll locked while open).
+ *   slide-in drawer with a backdrop (body scroll locked while open). The
+ *   drawer always shows full labels — collapse is a desktop-only concept.
  *
  * Z-LADDER (keep in sync across the app):
  *   20 page sticky toolbars · 30 mobile top bar / sheet backdrops / student
@@ -27,6 +30,8 @@ import { can, type Permission, type Role } from "@/server/domain/roles";
  *   Modal, workload popover) · 70 toasts.
  * Page-level sticky toolbars use `top-14 lg:top-0` (clears the mobile bar).
  */
+
+const COLLAPSED_KEY = "appshell-collapsed";
 
 interface NavItem {
   href: string;
@@ -75,7 +80,36 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   useScrollLock(open);
+
+  // Restore the saved collapse preference after mount (async so the state
+  // setter never runs synchronously inside the effect body, and so SSR
+  // markup matches the first client render).
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const saved = window.localStorage.getItem(COLLAPSED_KEY);
+        if (!cancelled && saved === "1") setCollapsed(true);
+      } catch {
+        /* storage unavailable (private mode) — keep default */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function toggleCollapsed() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      window.localStorage.setItem(COLLAPSED_KEY, next ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }
 
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
@@ -86,32 +120,46 @@ export function AppShell({
     }),
   })).filter((section) => section.items.length > 0);
 
-  const nav = (
+  /**
+   * Shared nav body. `isCollapsed` only ever differs from the state on the
+   * desktop sidebar; the mobile drawer always renders full labels.
+   * `showToggle` renders the collapse button (desktop sidebar only).
+   */
+  const renderNav = (isCollapsed: boolean, showToggle: boolean) => (
     <>
       <Link
         href="/"
-        className="flex items-center gap-2.5 rounded-lg p-2 transition-colors hover:bg-zinc-100"
         onClick={() => setOpen(false)}
+        title={isCollapsed ? "Măng Cành — Trang chủ" : undefined}
+        className={`flex items-center rounded-lg p-2 transition-colors hover:bg-zinc-100 ${
+          isCollapsed ? "justify-center" : "gap-2.5"
+        }`}
       >
         <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-700 text-white">
           <Icon name="calendar" size={17} />
         </span>
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold leading-tight text-zinc-900">
-            Măng Cành
+        {isCollapsed ? null : (
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold leading-tight text-zinc-900">
+              Măng Cành
+            </span>
+            <span className="block text-[11px] leading-tight text-zinc-500">
+              Thời khóa biểu điện tử
+            </span>
           </span>
-          <span className="block text-[11px] leading-tight text-zinc-500">
-            Thời khóa biểu điện tử
-          </span>
-        </span>
+        )}
       </Link>
 
       <nav className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto" aria-label="Điều hướng chính">
         {sections.map((section) => (
           <div key={section.title}>
-            <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-              {section.title}
-            </p>
+            {isCollapsed ? (
+              <div className="mx-auto my-2 h-px w-8 bg-zinc-200" aria-hidden="true" />
+            ) : (
+              <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+                {section.title}
+              </p>
+            )}
             <ul className="space-y-0.5">
               {section.items.map((item) => {
                 const active = pathname === item.href;
@@ -121,7 +169,10 @@ export function AppShell({
                       href={item.href}
                       onClick={() => setOpen(false)}
                       aria-current={active ? "page" : undefined}
-                      className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm font-medium transition-colors ${
+                      title={isCollapsed ? item.label : undefined}
+                      className={`flex items-center rounded-lg text-sm font-medium transition-colors ${
+                        isCollapsed ? "justify-center px-0 py-2" : "gap-2.5 px-2.5 py-2"
+                      } ${
                         active
                           ? "bg-blue-50 text-blue-800"
                           : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
@@ -132,7 +183,9 @@ export function AppShell({
                         size={17}
                         className={active ? "text-blue-700" : "text-zinc-400"}
                       />
-                      <span className="truncate">{item.label}</span>
+                      {isCollapsed ? null : (
+                        <span className="truncate">{item.label}</span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -143,29 +196,66 @@ export function AppShell({
       </nav>
 
       <div className="border-t border-zinc-200 pt-3">
-        <div className="flex items-center gap-2 px-1">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
-            <Icon name="user" size={15} />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium leading-tight text-zinc-900">
-              {user.displayName}
-            </span>
-            <span className="block truncate text-[11px] leading-tight text-zinc-500">
-              {roleLabelVi(user.role)}
-            </span>
-          </span>
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
-              aria-label="Đăng xuất"
-              title="Đăng xuất"
+        {showToggle ? (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-label={isCollapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+            aria-pressed={isCollapsed}
+            title={isCollapsed ? "Mở rộng thanh điều hướng" : "Thu gọn thanh điều hướng"}
+            className={`mb-2 flex items-center rounded-lg text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 ${
+              isCollapsed ? "w-full justify-center px-0 py-2" : "w-full gap-2.5 px-2.5 py-2"
+            }`}
+          >
+            <Icon name={isCollapsed ? "chevron-right" : "chevron-left"} size={16} />
+            {isCollapsed ? null : <span>Thu gọn</span>}
+          </button>
+        ) : null}
+
+        {isCollapsed ? (
+          <div className="flex flex-col items-center gap-1.5">
+            <span
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-500"
+              title={`${user.displayName} · ${roleLabelVi(user.role)}`}
             >
-              <Icon name="logout" size={16} />
-            </button>
-          </form>
-        </div>
+              <Icon name="user" size={15} />
+            </span>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+                aria-label="Đăng xuất"
+                title="Đăng xuất"
+              >
+                <Icon name="logout" size={16} />
+              </button>
+            </form>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 px-1">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-500">
+              <Icon name="user" size={15} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium leading-tight text-zinc-900">
+                {user.displayName}
+              </span>
+              <span className="block truncate text-[11px] leading-tight text-zinc-500">
+                {roleLabelVi(user.role)}
+              </span>
+            </span>
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+                aria-label="Đăng xuất"
+                title="Đăng xuất"
+              >
+                <Icon name="logout" size={16} />
+              </button>
+            </form>
+          </div>
+        )}
       </div>
     </>
   );
@@ -174,11 +264,15 @@ export function AppShell({
     <div className="flex min-h-screen flex-1 bg-zinc-50">
       {/* Desktop sidebar (hidden in print: fixed elements repeat on every
           printed page) */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-zinc-200 bg-white px-3 py-4 print:hidden lg:flex">
-        {nav}
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 hidden flex-col border-r border-zinc-200 bg-white px-3 py-4 transition-[width] duration-200 print:hidden lg:flex ${
+          collapsed ? "w-16" : "w-60"
+        }`}
+      >
+        {renderNav(collapsed, true)}
       </aside>
 
-      {/* Mobile drawer */}
+      {/* Mobile drawer — always full labels */}
       {open ? (
         <div
           className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] print:hidden lg:hidden"
@@ -193,7 +287,7 @@ export function AppShell({
         aria-label="Điều hướng chính"
         aria-hidden={!open}
       >
-        {nav}
+        {renderNav(false, false)}
       </aside>
 
       {/* Mobile top bar */}
@@ -209,8 +303,14 @@ export function AppShell({
         <h1 className="truncate text-sm font-semibold text-zinc-900">{page}</h1>
       </header>
 
-      {/* Content (offset by sidebar on ≥lg) */}
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-60">{children}</div>
+      {/* Content (offset by sidebar on ≥lg; tracks the collapsed width) */}
+      <div
+        className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${
+          collapsed ? "lg:pl-16" : "lg:pl-60"
+        }`}
+      >
+        {children}
+      </div>
     </div>
   );
 }
