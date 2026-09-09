@@ -29,8 +29,17 @@ export function subscribeToNotifications(listener: Listener): () => void {
 /**
  * Notifies open SSE streams that new notifications exist for these users.
  * Call AFTER the creating transaction commits (never inside it).
+ *
+ * The same funnel fans out Web Push delivery (fire-and-forget, never blocks
+ * the mutating request) via a dynamic import so this module's consumers
+ * never load the push stack at import time.
  */
 export function publishNotificationsChanged(userIds: string[]): void {
+  if (userIds.length > 0) {
+    void import("@/server/services/push.service")
+      .then((push) => push.deliverPendingPush(userIds))
+      .catch(() => undefined);
+  }
   if (listeners.size === 0) return;
   for (const userId of userIds) {
     for (const listener of listeners) {

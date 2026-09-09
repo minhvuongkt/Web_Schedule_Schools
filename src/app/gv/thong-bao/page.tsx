@@ -7,6 +7,8 @@ import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton"
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { NotificationLiveRefresher } from "@/components/notifications/live-refresher";
 import type { NotificationsResponse } from "@/components/notifications/types";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
+import { PushOptIn } from "@/components/pwa/push-opt-in";
 import { AppShell } from "@/components/site/app-shell";
 import { requireTeacher } from "@/server/auth/session";
 
@@ -55,6 +57,11 @@ export default async function TeacherNotificationsPage() {
           </div>
           {unreadCount > 0 ? <MarkAllReadButton /> : null}
         </header>
+
+        <div className="mb-6 space-y-2">
+          <PushOptIn />
+          <InstallPrompt />
+        </div>
 
         {error ? (
           <ErrorBanner message={error} />

@@ -182,7 +182,7 @@ export default function ImportForm({ weeks }: { weeks: WeekOption[] }) {
               onClick={() => void callImport("commit")}
               className="rounded-md bg-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
             >
-              {busy === "commit" ? "Đang nhập khẩu…" : "Nhập khẩu"}
+              {busy === "commit" ? "Đang thêm vào..." : "Nhập vào"}
             </button>
           </div>
         </div>

@@ -10,7 +10,7 @@ import ImportForm from "./ImportForm";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Nhập khẩu thời khóa biểu từ Excel",
+  title: "Nhập thời khóa biểu từ Excel",
 };
 
 /**
@@ -42,7 +42,7 @@ export default async function ImportPage() {
       <div className="mx-auto w-full max-w-4xl px-4 py-8">
         <header className="mb-6">
           <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
-            Nhập khẩu thời khóa biểu từ Excel
+            Nhập thời khóa biểu từ Excel
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
             Tệp .xls/.xlsx có trang tính TKB (không dùng multipart — tệp được đọc

@@ -23,6 +23,7 @@ import { Portal } from "@/components/ui/portal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
 import { useScrollLock } from "@/components/ui/use-scroll-lock";
+import { useMediaQuery } from "@/components/ui/use-media-query";
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-zinc-100 text-zinc-700",
@@ -87,7 +88,11 @@ export function PlannerApp({ user }: Props) {
   const toastSeq = useRef(0);
 
   const sheetOpen = Boolean(selectedEntry || targetCell || report);
-  useScrollLock(sheetOpen || actionsOpen);
+  // ≥xl the panel is an inline sticky rail, not a modal: locking body scroll
+  // there freezes the page and strands the rail at the top of the layout.
+  // Only lock on the breakpoints where the sheet is an actual overlay.
+  const isDesktopRail = useMediaQuery("(min-width: 1280px)");
+  useScrollLock((sheetOpen || actionsOpen) && isDesktopRail !== true);
 
   const canWrite = user.role === "TIMETABLE_ADMIN" || user.role === "SUPER_ADMIN";
   const canApprove = user.role === "PRINCIPAL" || user.role === "SUPER_ADMIN";

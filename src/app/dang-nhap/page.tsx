@@ -79,6 +79,10 @@ export default async function LoginPage({ searchParams }: PageProps) {
           </Link>{" "}
           (không cần đăng nhập).
         </p>
+        <p className="mt-2 text-center text-xs text-stone-500">
+          Chưa có tài khoản? Tài khoản do quản trị nhà trường cấp — vui lòng
+          liên hệ văn phòng trường.
+        </p>
       </div>
     </div>
   );

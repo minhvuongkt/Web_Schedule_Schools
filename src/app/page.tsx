@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { formatWeekLabel } from "@/components/timetable/format";
 import { Icon } from "@/components/ui/icon";
 import type { IconName } from "@/components/ui/icon";
@@ -390,6 +391,7 @@ export default async function LandingPage() {
                 <Icon name="graduation-cap" size={16} />
                 Sổ tay học sinh
               </Link>
+              <InstallPrompt compact />
             </div>
             <p className="mt-6 text-sm text-stone-500">
               {user && workspace ? (

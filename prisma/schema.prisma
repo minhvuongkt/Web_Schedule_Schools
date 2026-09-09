@@ -12,7 +12,7 @@
 
 generator client {
   provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  output   = "../src/generated/prisma-fresh"
 }
 
 datasource db {
@@ -532,10 +532,29 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  teacher       Teacher?                @relation("TeacherUser")
-  student       Student?                @relation("StudentUser")
-  authSessions  AuthSession[]
-  notifications NotificationRecipient[]
+  teacher           Teacher?                @relation("TeacherUser")
+  student           Student?                @relation("StudentUser")
+  authSessions      AuthSession[]
+  notifications     NotificationRecipient[]
+  pushSubscriptions PushSubscription[]
+}
+
+// Web Push subscriptions (RFC 8030). endpoint is the push service URL and is
+// globally unique; lastNotifiedAt gates delivery so a newly registered
+// device never replays old notifications.
+model PushSubscription {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  endpoint       String   @unique
+  p256dh         String // base64url, 65-byte uncompressed P-256 point
+  auth           String // base64url, 16-byte auth secret
+  lastNotifiedAt DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  userAgent      String?
+
+  @@index([userId])
 }
 
 // Recipients reference users with a proper FK; deletion of a user cascades

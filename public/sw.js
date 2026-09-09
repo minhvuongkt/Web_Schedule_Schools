@@ -1,7 +1,7 @@
 // Service worker for the public timetable PWA (Phase 1: read-only offline shell).
 // Plain JS on purpose — served straight from /public with no build step.
 
-const SHELL_CACHE = "tkb-shell-v3"; // bump on deploy: purges stale cached HTML + chunks
+const SHELL_CACHE = "tkb-shell-v4"; // bump on deploy: purges stale cached HTML + chunks
 const META_CACHE = "tkb-meta";
 const SYNCED_AT_KEY = "/__syncedAt";
 const ALLOWED_CACHES = [SHELL_CACHE, META_CACHE];
@@ -146,4 +146,49 @@ self.addEventListener("fetch", (event) => {
   if (isStaticAsset(url.pathname)) {
     event.respondWith(handleStaticAsset(request));
   }
+});
+
+// ---------------------------------------------------------------------------
+// Web Push (RFC 8030). The server POSTs an aes128gcm-encrypted payload;
+// the browser decrypts it and hands us the JSON via the push event.
+// ---------------------------------------------------------------------------
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = {};
+  }
+  const title = data.title || "Thời khóa biểu Măng Cành";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "Bạn có thông báo mới.",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: data.tag || "tkb-notification",
+      data: { url: data.url || "/gv/thong-bao" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url =
+    (event.notification.data && event.notification.data.url) || "/gv/thong-bao";
+  event.waitUntil(
+    (async () => {
+      const clients = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+      for (const client of clients) {
+        const clientUrl = new URL(client.url, self.location.origin);
+        if (clientUrl.pathname === url && "focus" in client) {
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })(),
+  );
 });
