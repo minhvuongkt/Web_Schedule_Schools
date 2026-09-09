@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "vapid:generate": "node scripts/generate-vapid.cjs",
+    "vapid:generate": "node scripts/generate-vapid.mjs",
     "test": "vitest run",
     "test:watch": "vitest"
   },

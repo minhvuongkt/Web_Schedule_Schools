@@ -1,6 +1,6 @@
 // Generates a VAPID key pair for Web Push (RFC 8292) using Node's crypto —
 // no external packages. Prints .env lines to append. Run: npm run vapid:generate
-const { createECDH } = require("node:crypto");
+import { createECDH } from "node:crypto";
 
 const ecdh = createECDH("prime256v1");
 ecdh.generateKeys();
