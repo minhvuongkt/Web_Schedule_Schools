@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Select } from "@/components/ui/select";
+
 interface AssignmentRow {
   id: string;
   teacherId: string;
@@ -150,10 +152,10 @@ export function AssignmentsApp({ canManage }: { canManage: boolean }) {
   return (
     <div className="mx-auto max-w-7xl space-y-4 px-4 py-4">
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <select
+        <Select
+          label="Lọc theo giáo viên"
           value={teacherFilter}
           onChange={(e) => setTeacherFilter(e.target.value)}
-          className="rounded-md border border-zinc-300 bg-white px-2 py-1.5"
         >
           <option value="">Tất cả giáo viên ({teachers.length})</option>
           {teachers.map((t) => (
@@ -161,7 +163,7 @@ export function AssignmentsApp({ canManage }: { canManage: boolean }) {
               {t.fullName} ({t.code})
             </option>
           ))}
-        </select>
+        </Select>
         {canManage && (
           <button
             type="button"
@@ -247,6 +249,7 @@ export function AssignmentsApp({ canManage }: { canManage: boolean }) {
                 Dạy {teachingTotal} tiết · Kiêm nhiệm {dutyTotal}
               </span>
             </header>
+            <div className="overflow-x-auto [&_table]:min-w-xl">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-zinc-100 text-left text-xs text-zinc-500">
@@ -289,6 +292,7 @@ export function AssignmentsApp({ canManage }: { canManage: boolean }) {
                 ))}
               </tbody>
             </table>
+            </div>
           </section>
         );
       })}
@@ -385,81 +389,71 @@ function AssignmentForm({
           {validation}
         </p>
       )}
-      <div className="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Giáo viên</label>
-          <select
-            value={teacherId}
-            onChange={(e) => setTeacherId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
-          >
-            {teachers.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.fullName} ({t.code})
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Loại</label>
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value as "TEACHING" | "DUTY")}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
-          >
-            <option value="TEACHING">Dạy học</option>
-            <option value="DUTY">Kiêm nhiệm</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Lớp</label>
-          <select
-            value={classId}
-            onChange={(e) => setClassId(e.target.value)}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
-          >
-            <option value="">— (không có) —</option>
-            {classes.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.code}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-zinc-500">Môn học</label>
-          <select
-            value={subjectId}
-            onChange={(e) => {
-              setSubjectId(e.target.value);
-              setComponentId("");
-            }}
-            className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
-          >
-            <option value="">— (không có) —</option>
-            {subjects.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </div>
+      <div className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+        <Select
+          label="Giáo viên"
+          labelVisible
+          value={teacherId}
+          onChange={(e) => setTeacherId(e.target.value)}
+        >
+          {teachers.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.fullName} ({t.code})
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Loại"
+          labelVisible
+          value={type}
+          onChange={(e) => setType(e.target.value as "TEACHING" | "DUTY")}
+        >
+          <option value="TEACHING">Dạy học</option>
+          <option value="DUTY">Kiêm nhiệm</option>
+        </Select>
+        <Select
+          label="Lớp"
+          labelVisible
+          value={classId}
+          onChange={(e) => setClassId(e.target.value)}
+        >
+          <option value="">— (không có) —</option>
+          {classes.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.code}
+            </option>
+          ))}
+        </Select>
+        <Select
+          label="Môn học"
+          labelVisible
+          value={subjectId}
+          onChange={(e) => {
+            setSubjectId(e.target.value);
+            setComponentId("");
+          }}
+        >
+          <option value="">— (không có) —</option>
+          {subjects.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </Select>
         {subject && subject.components.length > 0 && (
-          <div>
-            <label className="block text-xs font-medium text-zinc-500">Phân môn</label>
-            <select
-              value={componentId}
-              onChange={(e) => setComponentId(e.target.value)}
-              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5"
-            >
-              <option value="">— Không —</option>
-              {subject.components.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <Select
+            label="Phân môn"
+            labelVisible
+            value={componentId}
+            onChange={(e) => setComponentId(e.target.value)}
+          >
+            <option value="">— Không —</option>
+            {subject.components.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </Select>
         )}
         <div>
           <label className="block text-xs font-medium text-zinc-500">Tiết/tuần</label>

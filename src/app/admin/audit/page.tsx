@@ -185,7 +185,7 @@ export default async function AuditLogPage({ searchParams }: PageProps) {
             <ErrorBanner message={error} />
           ) : entries && entries.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto [&_table]:min-w-2xl">
                 <table className="w-full border-collapse text-sm">
                   <thead>
                     <tr>

@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-50 via-white to-zinc-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-emerald-50/60 via-white to-[#FAF7EF]">
       <PublicHeader current="hsv" />
       <div className="flex flex-1 flex-col">
         <div className="flex-1 pb-14 md:pb-0">{children}</div>

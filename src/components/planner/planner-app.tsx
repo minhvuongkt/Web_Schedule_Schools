@@ -19,8 +19,10 @@ import { IssuesPanel } from "./issues-panel";
 import { WorkloadBadge } from "./workload-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Icon } from "@/components/ui/icon";
+import { Portal } from "@/components/ui/portal";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
+import { useScrollLock } from "@/components/ui/use-scroll-lock";
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: "bg-zinc-100 text-zinc-700",
@@ -75,6 +77,7 @@ export function PlannerApp({ user }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const [report, setReport] = useState<ValidateReport | null>(null);
   const [busy, setBusy] = useState(false);
   const undoStack = useRef<UndoAction[]>([]);
@@ -82,6 +85,9 @@ export function PlannerApp({ user }: Props) {
   const [highlightEntryId, setHighlightEntryId] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
   const toastSeq = useRef(0);
+
+  const sheetOpen = Boolean(selectedEntry || targetCell || report);
+  useScrollLock(sheetOpen || actionsOpen);
 
   const canWrite = user.role === "TIMETABLE_ADMIN" || user.role === "SUPER_ADMIN";
   const canApprove = user.role === "PRINCIPAL" || user.role === "SUPER_ADMIN";
@@ -104,6 +110,30 @@ export function PlannerApp({ user }: Props) {
     },
     [],
   );
+
+  /** Error feedback also auto-dismisses (8s) so a toast can never
+      permanently cover toolbar controls; manual close always available. */
+  useEffect(() => {
+    if (!error) return;
+    const t = window.setTimeout(() => setError(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [error]);
+
+  /** Esc closes the entry sheet / action sheet (mirrors ConfirmDialog). */
+  useEffect(() => {
+    if (!sheetOpen && !actionsOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (actionsOpen) setActionsOpen(false);
+      else {
+        setSelectedEntry(null);
+        setTargetCell(null);
+        setReport(null);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [sheetOpen, actionsOpen]);
 
   const loadVersions = useCallback(async (wid: string) => {
     const data = await api.versions(wid);
@@ -464,46 +494,53 @@ export function PlannerApp({ user }: Props) {
             Rows wrap instead of scrolling so every button (incl. Xóa bản nháp)
             is always visible. */}
         <div className="min-w-0 flex-1">
-          <div className="no-print sticky top-14 z-20 mb-4 rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm lg:top-0">
-            <div className="space-y-2">
-              {/* Row 1 — context + lifecycle actions */}
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <Select
-                  label="Chọn tuần"
-                  value={weekId}
-                  onChange={(e) => {
-                    setWeekId(e.target.value);
-                    setVersionId("");
-                    setGrid(null);
-                    setReport(null);
-                    undoStack.current = [];
-                    setUndoCount(0);
-                    loadVersions(e.target.value).then((vs) => {
-                      if (vs.length > 0) setVersionId(vs[0].id);
-                    });
-                  }}
-                >
-                  {weeks.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      Tuần {String(w.weekNo).padStart(2, "0")} ({VI_DATE(w.weekStart)} –{" "}
-                      {VI_DATE(w.weekEnd)})
-                    </option>
-                  ))}
-                </Select>
+          {/* Compact sticky toolbar. Height is BOUNDED (max-h + internal
+              scroll) so sticky can never push controls out of reach; on
+              <lg the lifecycle actions live in the "Thao tác" action sheet
+              instead of wrapping over multiple rows. */}
+          <div className="no-print sticky top-14 z-20 mb-4 max-h-[calc(100vh-3.5rem)] space-y-2 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm [@supports(height:100dvh)]:max-h-[calc(100dvh-3.5rem)] lg:top-0 lg:max-h-none lg:overflow-visible">
+            {/* Context row: selects full-width on phones, sharing a row ≥sm.
+                The auto track keeps status + the mobile actions trigger. */}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-center">
+              <Select
+                label="Chọn tuần"
+                className="min-w-0"
+                value={weekId}
+                onChange={(e) => {
+                  setWeekId(e.target.value);
+                  setVersionId("");
+                  setGrid(null);
+                  setReport(null);
+                  undoStack.current = [];
+                  setUndoCount(0);
+                  loadVersions(e.target.value).then((vs) => {
+                    if (vs.length > 0) setVersionId(vs[0].id);
+                  });
+                }}
+              >
+                {weeks.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    Tuần {String(w.weekNo).padStart(2, "0")} ({VI_DATE(w.weekStart)} –{" "}
+                    {VI_DATE(w.weekEnd)})
+                  </option>
+                ))}
+              </Select>
 
-                <Select
-                  label="Chọn phiên bản"
-                  value={versionId}
-                  onChange={(e) => setVersionId(e.target.value)}
-                >
-                  {versions.map((v) => (
-                    <option key={v.id} value={v.id}>
-                      v{v.versionNo} · {STATUS_VI[v.status] ?? v.status} ({v.entryCount} tiết)
-                    </option>
-                  ))}
-                  {versions.length === 0 && <option value="">—</option>}
-                </Select>
+              <Select
+                label="Chọn phiên bản"
+                className="min-w-0"
+                value={versionId}
+                onChange={(e) => setVersionId(e.target.value)}
+              >
+                {versions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    v{v.versionNo} · {STATUS_VI[v.status] ?? v.status} ({v.entryCount} tiết)
+                  </option>
+                ))}
+                {versions.length === 0 && <option value="">—</option>}
+              </Select>
 
+              <div className="flex items-center justify-between gap-2 sm:justify-end">
                 {version && (
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_STYLES[version.status] ?? ""}`}
@@ -511,97 +548,112 @@ export function PlannerApp({ user }: Props) {
                     {STATUS_VI[version.status] ?? version.status}
                   </span>
                 )}
-
-                <div className="ml-auto flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleValidate}
-                    disabled={busy || !versionId}
-                    className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
-                  >
-                    Kiểm tra
-                  </button>
-                  {version?.status === "DRAFT" && canWrite && (
-                    <button
-                      type="button"
-                      onClick={() => handleWorkflow("submit-review", "Gửi phiên bản này để duyệt?")}
-                      disabled={busy}
-                      className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
-                    >
-                      Gửi duyệt
-                    </button>
-                  )}
-                  {version?.status === "REVIEW" && canApprove && (
-                    <button
-                      type="button"
-                      onClick={() => handleWorkflow("approve", "Phê duyệt phiên bản này?")}
-                      disabled={busy}
-                      className="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
-                    >
-                      Phê duyệt
-                    </button>
-                  )}
-                  {version?.status === "APPROVED" && (canWrite || canApprove) && (
-                    <button
-                      type="button"
-                      onClick={() => handleWorkflow("publish", "Công bố phiên bản này? Bản công bố cũ sẽ được lưu trữ.")}
-                      disabled={busy}
-                      className="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
-                    >
-                      Công bố
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={runUndo}
-                    disabled={undoCount === 0 || busy}
-                    title="Hoàn tác thao tác vừa rồi (Ctrl+Z)"
-                    className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
-                  >
-                    <Icon name="history-icon" size={15} />
-                    Hoàn tác ({undoCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleCreateDraft(false)}
-                    disabled={busy}
-                    className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
-                  >
-                    Tạo bản nháp mới
-                  </button>
-                  {versionId && (
-                    <button
-                      type="button"
-                      onClick={() => handleCreateDraft(true)}
-                      disabled={busy}
-                      title="Nhân bản phiên bản đang chọn thành bản nháp mới"
-                      className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
-                    >
-                      Nhân bản
-                    </button>
-                  )}
-                  {canWrite && versionId && (
-                    <button
-                      type="button"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      disabled={busy || version?.status !== "DRAFT"}
-                      title={
-                        version?.status === "DRAFT"
-                          ? "Xóa bản nháp đang chọn (không thể hoàn tác)"
-                          : "Chỉ bản nháp mới được xóa — phiên bản đã duyệt/công bố là lịch sử bất biến"
-                      }
-                      className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      <Icon name="trash-2" size={15} />
-                      Xóa bản nháp
-                    </button>
-                  )}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setActionsOpen(true)}
+                  aria-haspopup="dialog"
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 lg:hidden"
+                >
+                  <Icon name="settings" size={15} />
+                  Thao tác
+                </button>
               </div>
+            </div>
 
-              {/* Row 2 — class chips + workload signal */}
-              <div className="flex flex-wrap items-center gap-1.5">
-                <span className="shrink-0 pr-1 text-xs font-medium text-zinc-500">Lớp</span>
+            {/* Desktop actions (unchanged position ≥lg; hidden behind the
+                action sheet <lg). Delete is ALWAYS rendered for canWrite —
+                disabled with a reason when the version is not a draft. */}
+            <div className="hidden flex-wrap items-center gap-2 lg:flex">
+              <button
+                type="button"
+                onClick={handleValidate}
+                disabled={busy || !versionId}
+                className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+              >
+                Kiểm tra
+              </button>
+              {version?.status === "DRAFT" && canWrite && (
+                <button
+                  type="button"
+                  onClick={() => handleWorkflow("submit-review", "Gửi phiên bản này để duyệt?")}
+                  disabled={busy}
+                  className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-amber-500 disabled:opacity-50"
+                >
+                  Gửi duyệt
+                </button>
+              )}
+              {version?.status === "REVIEW" && canApprove && (
+                <button
+                  type="button"
+                  onClick={() => handleWorkflow("approve", "Phê duyệt phiên bản này?")}
+                  disabled={busy}
+                  className="shrink-0 rounded-lg bg-blue-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-blue-600 disabled:opacity-50"
+                >
+                  Phê duyệt
+                </button>
+              )}
+              {version?.status === "APPROVED" && (canWrite || canApprove) && (
+                <button
+                  type="button"
+                  onClick={() => handleWorkflow("publish", "Công bố phiên bản này? Bản công bố cũ sẽ được lưu trữ.")}
+                  disabled={busy}
+                  className="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-50"
+                >
+                  Công bố
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={runUndo}
+                disabled={undoCount === 0 || busy}
+                title="Hoàn tác thao tác vừa rồi (Ctrl+Z)"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+              >
+                <Icon name="history-icon" size={15} />
+                Hoàn tác ({undoCount})
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCreateDraft(false)}
+                disabled={busy}
+                className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+              >
+                Tạo bản nháp mới
+              </button>
+              {versionId && (
+                <button
+                  type="button"
+                  onClick={() => handleCreateDraft(true)}
+                  disabled={busy}
+                  title="Nhân bản phiên bản đang chọn thành bản nháp mới"
+                  className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                >
+                  Nhân bản
+                </button>
+              )}
+              {canWrite && (
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={busy || !versionId || version?.status !== "DRAFT"}
+                  title={
+                    version?.status === "DRAFT"
+                      ? "Xóa bản nháp đang chọn (không thể hoàn tác)"
+                      : "Chỉ bản nháp mới được xóa — phiên bản đã duyệt/công bố là lịch sử bất biến"
+                  }
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <Icon name="trash-2" size={15} />
+                  Xóa bản nháp
+                </button>
+              )}
+            </div>
+
+            {/* Class chips: single-line scroll <lg (predictable height),
+                wrap ≥lg. */}
+            <div className="flex items-center gap-1.5">
+              <span className="shrink-0 pr-1 text-xs font-medium text-zinc-500">Lớp</span>
+              <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible lg:pb-0">
                 {classes.map((c) => {
                   const active = c.id === classId;
                   return (
@@ -610,7 +662,7 @@ export function PlannerApp({ user }: Props) {
                       type="button"
                       aria-pressed={active}
                       onClick={() => setClassId(c.id)}
-                      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                         active
                           ? "border-blue-700 bg-blue-700 text-white shadow-sm"
                           : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
@@ -620,14 +672,14 @@ export function PlannerApp({ user }: Props) {
                     </button>
                   );
                 })}
-                <div className="ml-auto shrink-0">
-                  <WorkloadBadge
-                    entries={grid?.entries ?? []}
-                    classId={classId}
-                    editable={Boolean(editable)}
-                    teachers={teachers}
-                  />
-                </div>
+              </div>
+              <div className="shrink-0">
+                <WorkloadBadge
+                  entries={grid?.entries ?? []}
+                  classId={classId}
+                  editable={Boolean(editable)}
+                  teachers={teachers}
+                />
               </div>
             </div>
           </div>
@@ -659,7 +711,7 @@ export function PlannerApp({ user }: Props) {
                     <table className="w-full table-fixed border-collapse text-sm">
                       <thead>
                         <tr className="bg-zinc-50">
-                          <th className="w-32 border border-zinc-200 px-2 py-1.5 text-left text-xs font-medium text-zinc-500">
+                          <th className="sticky left-0 z-10 w-32 border border-r-0 border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left text-xs font-medium text-zinc-500 shadow-[inset_-1px_0_0_#e4e4e7]">
                             Tiết
                           </th>
                           {schoolDays.map((day) => (
@@ -678,7 +730,7 @@ export function PlannerApp({ user }: Props) {
                       <tbody>
                         {periods.map((period) => (
                           <tr key={period.id}>
-                            <th className="border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left align-top">
+                            <th scope="row" className="sticky left-0 z-10 border border-r-0 border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left align-top shadow-[inset_-1px_0_0_#e4e4e7]">
                               <span className="block text-xs font-medium">
                                 Tiết {period.orderNo}
                               </span>
@@ -762,60 +814,237 @@ export function PlannerApp({ user }: Props) {
 
         {/* Panel dock: bottom sheet (<xl) so the grid stays visible; sticky
             right rail (≥xl) sticking at top-4 — safe because the toolbar is
-            inside the LEFT column (no offset coupling). */}
-        {Boolean(selectedEntry || targetCell || report) && (
+            inside the LEFT column (no offset coupling). Backdrop z-30 stays
+            below the desktop sidebar (z-40) so the sidebar remains usable
+            while a panel is open at lg–xl. */}
+        {sheetOpen && (
           <>
             <div
-              className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] xl:hidden"
+              className="no-print fixed inset-0 z-30 bg-zinc-950/40 backdrop-blur-[2px] xl:hidden"
               onClick={clearPanels}
               aria-hidden="true"
             />
-            <aside className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] space-y-4 overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-4 xl:z-auto xl:max-h-[calc(100vh-2rem)] xl:w-80 xl:shrink-0 xl:self-start xl:overflow-y-auto xl:rounded-none xl:p-0 xl:shadow-none">
-              <div
-                className="mx-auto h-1 w-10 rounded-full bg-zinc-200 xl:hidden"
-                aria-hidden="true"
-              />
-              {(selectedEntry || targetCell) && version && (
-                <EntryPanel
-                  key={selectedEntry?.id ?? `${targetCell?.dayId}|${targetCell?.periodId}`}
-                  entry={selectedEntry}
-                  cell={targetCell ?? (selectedEntry
-                    ? { dayId: selectedEntry.academicDayId, periodId: selectedEntry.periodId }
-                    : null)}
-                  grid={grid}
-                  classes={classes}
-                  teachers={teachers}
-                  subjects={subjects}
-                  rooms={rooms}
-                  classFilter={classId}
-                  editable={editable && canWrite}
-                  busy={busy}
-                  onCreate={handleCreate}
-                  onUpdate={handleUpdate}
-                  onDelete={handleDelete}
-                  onClose={() => {
-                    setSelectedEntry(null);
-                    setTargetCell(null);
-                  }}
-                />
-              )}
-              {report && (
-                <IssuesPanel
-                  report={report}
-                  onLocate={(ids) => {
-                    const id = Array.isArray(ids) ? String(ids[0]) : String(ids);
-                    setHighlightEntryId(id);
-                    const entry = grid?.entries.find((e) => e.id === id);
-                    if (entry) setClassId(entry.classId);
-                  }}
-                  onClose={() => setReport(null)}
-                />
-              )}
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label="Sửa tiết học"
+              className="no-print fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-2xl [@supports(height:100dvh)]:max-h-[85dvh] xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-4 xl:z-auto xl:max-h-[calc(100vh-2rem)] xl:w-80 xl:shrink-0 xl:self-start xl:overflow-y-auto xl:overscroll-contain xl:rounded-none xl:shadow-none"
+            >
+              <button
+                type="button"
+                onClick={clearPanels}
+                aria-label="Đóng"
+                className="flex h-11 w-full shrink-0 items-center justify-center xl:hidden"
+              >
+                <span className="h-1 w-10 rounded-full bg-zinc-300" aria-hidden="true" />
+              </button>
+              <div className="space-y-4 overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-1 xl:px-0 xl:pb-0 xl:pt-0">
+                {(selectedEntry || targetCell) && version && (
+                  <EntryPanel
+                    key={selectedEntry?.id ?? `${targetCell?.dayId}|${targetCell?.periodId}`}
+                    entry={selectedEntry}
+                    cell={targetCell ?? (selectedEntry
+                      ? { dayId: selectedEntry.academicDayId, periodId: selectedEntry.periodId }
+                      : null)}
+                    grid={grid}
+                    classes={classes}
+                    teachers={teachers}
+                    subjects={subjects}
+                    rooms={rooms}
+                    classFilter={classId}
+                    editable={editable && canWrite}
+                    busy={busy}
+                    onCreate={handleCreate}
+                    onUpdate={handleUpdate}
+                    onDelete={handleDelete}
+                    onClose={() => {
+                      setSelectedEntry(null);
+                      setTargetCell(null);
+                    }}
+                  />
+                )}
+                {report && (
+                  <IssuesPanel
+                    report={report}
+                    onLocate={(ids) => {
+                      const id = Array.isArray(ids) ? String(ids[0]) : String(ids);
+                      setHighlightEntryId(id);
+                      const entry = grid?.entries.find((e) => e.id === id);
+                      if (entry) setClassId(entry.classId);
+                    }}
+                    onClose={() => setReport(null)}
+                  />
+                )}
+              </div>
             </aside>
           </>
         )}
       </div>
       </div>
+
+      {/* Mobile action sheet (<lg): all lifecycle actions incl. delete.
+          Portaled so it stacks above the toolbar deterministically. */}
+      {actionsOpen ? (
+        <Portal>
+          <div
+            className="no-print fixed inset-0 z-30 bg-zinc-950/40 backdrop-blur-[2px] lg:hidden"
+            onClick={() => setActionsOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Thao tác phiên bản"
+            className="no-print fixed inset-x-0 bottom-0 z-50 flex max-h-[60vh] animate-fade-up flex-col rounded-t-2xl bg-white shadow-2xl [@supports(height:100dvh)]:max-h-[60dvh] lg:hidden"
+          >
+            <button
+              type="button"
+              onClick={() => setActionsOpen(false)}
+              aria-label="Đóng"
+              className="flex h-11 w-full shrink-0 items-center justify-center"
+            >
+              <span className="h-1 w-10 rounded-full bg-zinc-300" aria-hidden="true" />
+            </button>
+            <div className="overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <p className="mb-2 text-xs font-medium text-zinc-500">
+                {version
+                  ? `v${version.versionNo} · ${STATUS_VI[version.status] ?? version.status} · ${versions.find((v) => v.id === versionId)?.entryCount ?? grid?.entries.length ?? 0} tiết`
+                  : "Chưa chọn phiên bản"}
+              </p>
+              <ul className="space-y-1">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionsOpen(false);
+                      handleValidate();
+                    }}
+                    disabled={busy || !versionId}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-40"
+                  >
+                    <Icon name="check" size={17} />
+                    Kiểm tra xung đột
+                  </button>
+                </li>
+                {version?.status === "DRAFT" && canWrite && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        handleWorkflow("submit-review", "Gửi phiên bản này để duyệt?");
+                      }}
+                      disabled={busy}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-40"
+                    >
+                      <Icon name="arrow-right" size={17} />
+                      Gửi duyệt
+                    </button>
+                  </li>
+                )}
+                {version?.status === "REVIEW" && canApprove && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        handleWorkflow("approve", "Phê duyệt phiên bản này?");
+                      }}
+                      disabled={busy}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-blue-700 transition-colors hover:bg-blue-50 disabled:opacity-40"
+                    >
+                      <Icon name="check" size={17} />
+                      Phê duyệt
+                    </button>
+                  </li>
+                )}
+                {version?.status === "APPROVED" && (canWrite || canApprove) && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        handleWorkflow("publish", "Công bố phiên bản này? Bản công bố cũ sẽ được lưu trữ.");
+                      }}
+                      disabled={busy}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-40"
+                    >
+                      <Icon name="external-link" size={17} />
+                      Công bố
+                    </button>
+                  </li>
+                )}
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionsOpen(false);
+                      runUndo();
+                    }}
+                    disabled={undoCount === 0 || busy}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-40"
+                  >
+                    <Icon name="history-icon" size={17} />
+                    Hoàn tác ({undoCount})
+                  </button>
+                </li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActionsOpen(false);
+                      handleCreateDraft(false);
+                    }}
+                    disabled={busy}
+                    className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-40"
+                  >
+                    <Icon name="plus" size={17} />
+                    Tạo bản nháp mới
+                  </button>
+                </li>
+                {versionId && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        handleCreateDraft(true);
+                      }}
+                      disabled={busy}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-40"
+                    >
+                      <Icon name="file-spreadsheet" size={17} />
+                      Nhân bản phiên bản này
+                    </button>
+                  </li>
+                )}
+                {canWrite && (
+                  <li className="border-t border-zinc-100 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActionsOpen(false);
+                        setShowDeleteConfirm(true);
+                      }}
+                      disabled={busy || !versionId || version?.status !== "DRAFT"}
+                      className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-red-700 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <Icon name="trash-2" size={17} />
+                      Xóa bản nháp
+                    </button>
+                    {!versionId || version?.status !== "DRAFT" ? (
+                      <p className="px-3 pb-1 text-xs text-zinc-500">
+                        Chỉ bản nháp mới được xóa — phiên bản đã duyệt/công bố là
+                        lịch sử bất biến.
+                      </p>
+                    ) : null}
+                  </li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </Portal>
+      ) : null}
 
       {/* feedback overlays (viewport-anchored via portal) */}
       {error && (

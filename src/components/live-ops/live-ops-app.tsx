@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/icon";
 import { Select } from "@/components/ui/select";
 import { Toast } from "@/components/ui/toast";
+import { useScrollLock } from "@/components/ui/use-scroll-lock";
 
 // ---------------------------------------------------------------------------
 // Typed API client for live-ops (kept local; mirrors the planner contract)
@@ -113,6 +114,8 @@ export function LiveOpsApp() {
   const toastTimer = useRef<number | null>(null);
   const toastSeq = useRef(0);
 
+  useScrollLock(Boolean(selected));
+
   const flashNotice = useCallback((message: string) => {
     if (toastTimer.current !== null) window.clearTimeout(toastTimer.current);
     setError(null);
@@ -130,6 +133,24 @@ export function LiveOpsApp() {
     },
     [],
   );
+
+  /** Error toasts auto-dismiss (8s) so they never permanently cover
+      controls; manual close always available. */
+  useEffect(() => {
+    if (!error) return;
+    const t = window.setTimeout(() => setError(null), 8000);
+    return () => window.clearTimeout(t);
+  }, [error]);
+
+  /** Esc closes the entry sheet (mirrors ConfirmDialog). */
+  useEffect(() => {
+    if (!selected) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelected(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selected]);
 
   const loadActive = useCallback(async (wid: string) => {
     const res = await fetch(`/api/substitutions?weekId=${wid}`);
@@ -214,10 +235,13 @@ export function LiveOpsApp() {
             Toolbar lives inside the column so the rail sticks independently
             (top-14 clears the mobile top bar; ≥lg no top bar → top-0). */}
         <div className="min-w-0 flex-1">
-          <div className="no-print sticky top-14 z-20 mb-4 rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm lg:top-0">
-            <div className="flex flex-wrap items-center gap-2 text-sm">
+          {/* Compact sticky toolbar (bounded height; chips scroll in one
+              line <lg so the card never grows over the grid). */}
+          <div className="no-print sticky top-14 z-20 mb-4 max-h-[calc(100vh-3.5rem)] space-y-2 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 bg-white p-2.5 shadow-sm [@supports(height:100dvh)]:max-h-[calc(100dvh-3.5rem)] lg:top-0 lg:max-h-none lg:overflow-visible">
+            <div className="flex items-center gap-2">
               <Select
                 label="Chọn tuần"
+                className="min-w-0 flex-1"
                 value={weekId}
                 onChange={(e) => {
                   setWeekId(e.target.value);
@@ -233,34 +257,36 @@ export function LiveOpsApp() {
                 ))}
               </Select>
               {grid && (
-                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-800">
+                <span className="shrink-0 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">
                   Đã công bố · v{grid.version.versionNo}
                 </span>
               )}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <div className="flex items-center gap-1.5">
               <span className="shrink-0 pr-1 text-xs font-medium text-zinc-500">Lớp</span>
-              {classes.map((c) => {
-                const active = c.id === classId;
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => {
-                      setClassId(c.id);
-                      setSelected(null);
-                    }}
-                    className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      active
-                        ? "border-blue-700 bg-blue-700 text-white shadow-sm"
-                        : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
-                    }`}
-                  >
-                    {c.code}
-                  </button>
-                );
-              })}
+              <div className="flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-0.5 [scrollbar-width:none] lg:flex-wrap lg:overflow-visible">
+                {classes.map((c) => {
+                  const active = c.id === classId;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => {
+                        setClassId(c.id);
+                        setSelected(null);
+                      }}
+                      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        active
+                          ? "border-blue-700 bg-blue-700 text-white shadow-sm"
+                          : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900"
+                      }`}
+                    >
+                      {c.code}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
@@ -277,7 +303,7 @@ export function LiveOpsApp() {
                     <table className="w-full table-fixed border-collapse text-sm">
                       <thead>
                         <tr className="bg-zinc-50">
-                          <th className="w-28 border border-zinc-200 px-2 py-1.5 text-left text-xs font-medium text-zinc-500">
+                          <th className="sticky left-0 z-10 w-28 border border-r-0 border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left text-xs font-medium text-zinc-500 shadow-[inset_-1px_0_0_#e4e4e7]">
                             Tiết
                           </th>
                           {schoolDays.map((day) => (
@@ -293,7 +319,7 @@ export function LiveOpsApp() {
                           .filter((p) => p.sessionId === session.id)
                           .map((period) => (
                             <tr key={period.id}>
-                              <th className="border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left text-xs font-medium">
+                              <th scope="row" className="sticky left-0 z-10 border border-r-0 border-zinc-200 bg-zinc-50 px-2 py-1.5 text-left text-xs font-medium shadow-[inset_-1px_0_0_#e4e4e7]">
                                 Tiết {period.orderNo}
                                 <span className="block text-zinc-500">{period.startTime}</span>
                               </th>
@@ -359,7 +385,7 @@ export function LiveOpsApp() {
                           post("/api/substitutions/cancel", { substitutionId: s.id }),
                         )
                       }
-                      className="mt-1 rounded px-1 font-medium text-red-700 underline-offset-2 transition-colors hover:bg-red-50 hover:underline disabled:opacity-50"
+                      className="mt-1.5 inline-flex min-h-11 items-center rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:border-red-400 hover:bg-red-50 disabled:opacity-50"
                     >
                       Hủy phân công
                     </button>
@@ -381,7 +407,7 @@ export function LiveOpsApp() {
                           post("/api/substitutions/makeup-cancel", { makeupLessonId: m.id }),
                         )
                       }
-                      className="mt-1 rounded px-1 font-medium text-red-700 underline-offset-2 transition-colors hover:bg-red-50 hover:underline disabled:opacity-50"
+                      className="mt-1.5 inline-flex min-h-11 items-center rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-700 transition-colors hover:border-red-400 hover:bg-red-50 disabled:opacity-50"
                     >
                       Hủy dạy bù
                     </button>
@@ -393,51 +419,62 @@ export function LiveOpsApp() {
         </div>
 
         {/* Panel dock: bottom sheet (<xl), sticky rail (≥xl) — same pattern
-            as the planner editor. */}
+            as the planner editor. Backdrop z-30 stays below the sidebar. */}
         {selected && grid ? (
           <>
             <div
-              className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] xl:hidden"
+              className="no-print fixed inset-0 z-30 bg-zinc-950/40 backdrop-blur-[2px] xl:hidden"
               onClick={() => setSelected(null)}
               aria-hidden="true"
             />
-            <aside className="fixed inset-x-0 bottom-0 z-50 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-4 xl:z-auto xl:max-h-[calc(100vh-2rem)] xl:w-80 xl:shrink-0 xl:self-start xl:rounded-none xl:p-0 xl:shadow-none">
-              <div
-                className="mx-auto mb-3 h-1 w-10 rounded-full bg-zinc-200 xl:hidden"
-                aria-hidden="true"
-              />
-              <EntryOpsPanel
-                entry={selected}
-                grid={grid}
-                teachers={teachers}
-                busy={busy}
-                onSubstitute={(substituteTeacherId, reason, autoConfirm) =>
-                  run("Đã phân công dạy thay.", () =>
-                    post("/api/substitutions", {
-                      entryId: selected.id,
-                      substituteTeacherId,
-                      reason,
-                      autoConfirm,
-                    }),
-                  )
-                }
-                onCancelLesson={(reason) =>
-                  run("Đã hủy tiết học.", () =>
-                    post("/api/substitutions/cancel-lesson", { entryId: selected.id, reason }),
-                  )
-                }
-                onMakeup={(academicDayId, periodId, reason) =>
-                  run("Đã tạo tiết dạy bù.", () =>
-                    post("/api/substitutions/makeup", {
-                      originalEntryId: selected.id,
-                      academicDayId,
-                      periodId,
-                      reason,
-                    }),
-                  )
-                }
-                onClose={() => setSelected(null)}
-              />
+            <aside
+              role="dialog"
+              aria-modal="true"
+              aria-label="Thao tác tiết học"
+              className="no-print fixed inset-x-0 bottom-0 z-50 flex max-h-[85vh] flex-col rounded-t-2xl bg-white shadow-2xl [@supports(height:100dvh)]:max-h-[85dvh] xl:sticky xl:inset-x-auto xl:bottom-auto xl:top-4 xl:z-auto xl:max-h-[calc(100vh-2rem)] xl:w-80 xl:shrink-0 xl:self-start xl:overflow-y-auto xl:overscroll-contain xl:rounded-none xl:shadow-none"
+            >
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                aria-label="Đóng"
+                className="flex h-11 w-full shrink-0 items-center justify-center xl:hidden"
+              >
+                <span className="h-1 w-10 rounded-full bg-zinc-300" aria-hidden="true" />
+              </button>
+              <div className="overflow-y-auto overscroll-contain px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-1 xl:px-0 xl:pb-0 xl:pt-0">
+                <EntryOpsPanel
+                  entry={selected}
+                  grid={grid}
+                  teachers={teachers}
+                  busy={busy}
+                  onSubstitute={(substituteTeacherId, reason, autoConfirm) =>
+                    run("Đã phân công dạy thay.", () =>
+                      post("/api/substitutions", {
+                        entryId: selected.id,
+                        substituteTeacherId,
+                        reason,
+                        autoConfirm,
+                      }),
+                    )
+                  }
+                  onCancelLesson={(reason) =>
+                    run("Đã hủy tiết học.", () =>
+                      post("/api/substitutions/cancel-lesson", { entryId: selected.id, reason }),
+                    )
+                  }
+                  onMakeup={(academicDayId, periodId, reason) =>
+                    run("Đã tạo tiết dạy bù.", () =>
+                      post("/api/substitutions/makeup", {
+                        originalEntryId: selected.id,
+                        academicDayId,
+                        periodId,
+                        reason,
+                      }),
+                    )
+                  }
+                  onClose={() => setSelected(null)}
+                />
+              </div>
             </aside>
           </>
         ) : null}

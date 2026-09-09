@@ -115,7 +115,7 @@ export default async function TimetableClassSelectorPage({
   const hasQuery = search.query.length >= 2;
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-gradient-to-b from-sky-50 via-white to-zinc-50">
+    <div className="flex min-h-screen flex-1 flex-col bg-gradient-to-b from-emerald-50/60 via-white to-[#FAF7EF]">
       <PublicHeader current="tkb" />
       <main className="flex-1">
       <div className="mx-auto w-full max-w-5xl px-4 py-8">

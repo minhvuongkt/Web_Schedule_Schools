@@ -65,7 +65,7 @@ export function TeacherWeekTable({ days }: { days: TeacherDayDto[] }) {
             {column.labelVi}
           </h3>
           <div className="overflow-x-auto rounded-lg ring-1 ring-zinc-200">
-          <table className="w-full min-w-3xl table-fixed border-collapse text-sm">
+          <table className="w-full min-w-2xl table-fixed border-collapse text-sm">
             <thead>
               <tr className="bg-zinc-50">
                 <th

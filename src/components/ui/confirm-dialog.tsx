@@ -4,11 +4,13 @@ import { useEffect, type ReactNode } from "react";
 
 import { Icon } from "@/components/ui/icon";
 import { Portal } from "@/components/ui/portal";
+import { useScrollLock } from "@/components/ui/use-scroll-lock";
 
 /**
  * Shared confirmation dialog (rendered via Portal so it anchors to the
  * viewport regardless of page scroll / animated ancestors). Esc cancels;
- * the safe action gets focus first.
+ * the safe action gets focus first. z-[60] sits above sheets (z-50) and
+ * below toasts (z-[70]) per the app z-ladder.
  */
 export function ConfirmDialog({
   open,
@@ -31,6 +33,8 @@ export function ConfirmDialog({
   onConfirm: () => void;
   onCancel: () => void;
 }) {
+  useScrollLock(open);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -45,7 +49,7 @@ export function ConfirmDialog({
   return (
     <Portal>
       <div
-        className="no-print fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-zinc-950/50 p-4 backdrop-blur-sm"
+        className="no-print fixed inset-0 z-[60] flex animate-fade-in items-center justify-center bg-zinc-950/50 p-4 backdrop-blur-sm"
         onClick={onCancel}
         role="dialog"
         aria-modal="true"

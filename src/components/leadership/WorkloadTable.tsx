@@ -15,7 +15,7 @@ const TD_CLASS = "border border-zinc-200 px-3 py-2";
 
 export function WorkloadTable({ workloads }: { workloads: TeacherWorkloadDto[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto [&_table]:min-w-2xl">
       <table className="w-full border-collapse text-sm">
         <thead>
           <tr>

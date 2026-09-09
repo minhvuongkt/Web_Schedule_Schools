@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { RegisterSW } from "@/components/pwa/register-sw";
@@ -22,6 +22,14 @@ export const metadata: Metadata = {
   },
   description:
     "Thời khóa biểu điện tử Trường PTDTBT TH & THCS Măng Cành, năm học 2026–2027.",
+};
+
+/** viewportFit: cover unlocks env(safe-area-inset-*) for fixed bottom
+ *  surfaces (bottom sheets, student bottom nav). */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

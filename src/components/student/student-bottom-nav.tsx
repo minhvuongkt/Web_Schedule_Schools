@@ -33,7 +33,7 @@ export function StudentBottomNav() {
       aria-label="Điều hướng chính"
       className="sticky bottom-0 z-30 border-t border-zinc-200 bg-white/95 backdrop-blur md:relative md:bottom-auto md:mt-8 md:border-t-0"
     >
-      <ul className="mx-auto flex max-w-3xl">
+      <ul className="mx-auto flex max-w-3xl pb-[env(safe-area-inset-bottom)]">
         {items.map((item) => (
           <li key={item.href} className="flex-1">
             <Link

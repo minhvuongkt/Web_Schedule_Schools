@@ -38,7 +38,7 @@ export default async function ClassDeepLinkPage({ params }: PageProps) {
     : "";
 
   return (
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-sky-50 via-white to-zinc-50">
+    <div className="flex min-h-screen flex-col bg-gradient-to-b from-emerald-50/60 via-white to-[#FAF7EF]">
       <PublicHeader current="tkb" />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6">
       <header className="mb-6">

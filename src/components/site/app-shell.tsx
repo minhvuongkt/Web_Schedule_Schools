@@ -7,6 +7,7 @@ import { useState, type ReactNode } from "react";
 import { logoutAction } from "@/app/dang-nhap/actions";
 import { roleLabelVi } from "@/components/leadership/labels";
 import { Icon, type IconName } from "@/components/ui/icon";
+import { useScrollLock } from "@/components/ui/use-scroll-lock";
 import { can, type Permission, type Role } from "@/server/domain/roles";
 
 /**
@@ -17,10 +18,14 @@ import { can, type Permission, type Role } from "@/server/domain/roles";
  * - ≥lg: fixed left sidebar (w-60) — brand, grouped nav (RBAC-filtered),
  *   user chip + logout pinned at the bottom.
  * - <lg: sticky top bar (h-14) with a menu button; the sidebar becomes a
- *   slide-in drawer with a backdrop.
+ *   slide-in drawer with a backdrop (body scroll locked while open).
  *
- * Z-LADDER: drawer 50 > backdrop 40 > top bar 30 > page sticky bars 20.
- * Page-level sticky toolbars should use `top-14 lg:top-0`.
+ * Z-LADDER (keep in sync across the app):
+ *   20 page sticky toolbars · 30 mobile top bar / sheet backdrops / student
+ *   bottom nav · 40 desktop sidebar / drawer backdrop · 50 drawer / bottom
+ *   sheets (entry panel, action sheet) · 60 dialogs (ConfirmDialog, catalog
+ *   Modal, workload popover) · 70 toasts.
+ * Page-level sticky toolbars use `top-14 lg:top-0` (clears the mobile bar).
  */
 
 interface NavItem {
@@ -70,6 +75,7 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  useScrollLock(open);
 
   const sections = NAV_SECTIONS.map((section) => ({
     ...section,
@@ -166,21 +172,22 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen flex-1 bg-zinc-50">
-      {/* Desktop sidebar */}
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-zinc-200 bg-white px-3 py-4 lg:flex">
+      {/* Desktop sidebar (hidden in print: fixed elements repeat on every
+          printed page) */}
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-zinc-200 bg-white px-3 py-4 print:hidden lg:flex">
         {nav}
       </aside>
 
       {/* Mobile drawer */}
       {open ? (
         <div
-          className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] lg:hidden"
+          className="fixed inset-0 z-40 bg-zinc-950/40 backdrop-blur-[2px] print:hidden lg:hidden"
           onClick={() => setOpen(false)}
           aria-hidden="true"
         />
       ) : null}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-200 bg-white px-3 py-4 transition-transform duration-200 lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-zinc-200 bg-white px-3 py-4 transition-transform duration-200 print:hidden lg:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
         aria-label="Điều hướng chính"
@@ -190,7 +197,7 @@ export function AppShell({
       </aside>
 
       {/* Mobile top bar */}
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-zinc-200 bg-white/95 pr-4 backdrop-blur lg:hidden">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-zinc-200 bg-white/95 pr-4 backdrop-blur print:hidden lg:hidden">
         <button
           type="button"
           onClick={() => setOpen(true)}

@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { AppShell } from "@/components/site/app-shell";
 import { Icon } from "@/components/ui/icon";
+import { Portal } from "@/components/ui/portal";
 import { Select } from "@/components/ui/select";
+import { useScrollLock } from "@/components/ui/use-scroll-lock";
 import type { Role } from "@/server/domain/roles";
 
 /**
@@ -74,32 +76,44 @@ function Modal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  useScrollLock(true);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-zinc-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-    >
+    <Portal>
       <div
-        className="max-h-[90vh] w-full max-w-lg animate-scale-in overflow-y-auto rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl"
-        onClick={(e) => e.stopPropagation()}
+        className="no-print fixed inset-0 z-[60] flex animate-fade-in items-end justify-center bg-zinc-950/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700"
-            aria-label="Đóng"
-          >
-            <Icon name="x" size={18} />
-          </button>
+        <div
+          className="max-h-[90vh] w-full max-w-lg animate-scale-in overflow-y-auto overscroll-contain rounded-t-2xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl sm:rounded-2xl sm:pb-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-zinc-900">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-700"
+              aria-label="Đóng"
+            >
+              <Icon name="x" size={18} />
+            </button>
+          </div>
+          {children}
         </div>
-        {children}
       </div>
-    </div>
+    </Portal>
   );
 }
 
@@ -423,7 +437,70 @@ function TeachersTable({
   onToggle: (row: TeacherRow) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm [&>table]:min-w-2xl">
+    <>
+      {/* Mobile: cards (actions stay visible without horizontal scroll) */}
+      <ul className="space-y-2 md:hidden">
+        {rows.map((row) => (
+          <li
+            key={row.id}
+            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-zinc-900">
+                  {row.fullName}
+                  <span className="ml-1.5 font-mono text-xs font-semibold text-zinc-500">
+                    {row.code}
+                  </span>
+                </p>
+                <p className="mt-0.5 truncate text-xs text-zinc-500">
+                  {[row.position, row.specialty].filter(Boolean).join(" · ") || "—"}
+                </p>
+              </div>
+              <span
+                className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  row.isActive ? "bg-emerald-100 text-emerald-800" : "bg-zinc-100 text-zinc-500"
+                }`}
+              >
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    row.isActive ? "bg-emerald-500" : "bg-zinc-400"
+                  }`}
+                />
+                {row.isActive ? "Đang dạy" : "Nghỉ"}
+              </span>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => onEdit(row)}
+                className="min-h-11 flex-1 rounded-lg border border-zinc-300 px-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 active:scale-95"
+              >
+                Sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => onToggle(row)}
+                className={`min-h-11 flex-1 rounded-lg border px-2.5 text-xs font-medium transition-colors active:scale-95 ${
+                  row.isActive
+                    ? "border-rose-200 text-rose-700 hover:border-rose-400"
+                    : "border-emerald-200 text-emerald-700 hover:border-emerald-400"
+                }`}
+              >
+                {row.isActive ? "Ngừng dạy" : "Kích hoạt"}
+              </button>
+            </div>
+          </li>
+        ))}
+        {rows.length === 0 ? (
+          <li className="rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
+            Chưa có giáo viên nào.
+          </li>
+        ) : null}
+      </ul>
+
+      {/* ≥md: table */}
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm md:block [&>table]:min-w-2xl">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-400">
@@ -496,7 +573,8 @@ function TeachersTable({
           ) : null}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -577,7 +655,47 @@ function RoomsTable({
   onEdit: (row: RoomRow) => void;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm [&>table]:min-w-2xl">
+    <>
+      {/* Mobile: cards */}
+      <ul className="space-y-2 md:hidden">
+        {rows.map((row) => (
+          <li
+            key={row.id}
+            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-zinc-900">
+                  {row.name ?? row.code}
+                  <span className="ml-1.5 font-mono text-xs font-semibold text-zinc-500">
+                    {row.code}
+                  </span>
+                </p>
+                <p className="mt-0.5 truncate text-xs text-zinc-500">
+                  {[row.roomType, row.capacity ? `${row.capacity} chỗ` : null, `${row.entryCount} tiết đã xếp`]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onEdit(row)}
+              className="mt-3 min-h-11 w-full rounded-lg border border-zinc-300 px-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 active:scale-95"
+            >
+              Sửa
+            </button>
+          </li>
+        ))}
+        {rows.length === 0 ? (
+          <li className="rounded-xl border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
+            Chưa có phòng học nào.
+          </li>
+        ) : null}
+      </ul>
+
+      {/* ≥md: table */}
+      <div className="hidden overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm md:block [&>table]:min-w-2xl">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-400">
@@ -619,7 +737,8 @@ function RoomsTable({
           ) : null}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 }
 
