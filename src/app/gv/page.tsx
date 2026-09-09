@@ -1,8 +1,9 @@
 import { notFound } from "next/navigation";
 
 import { formatWeekRange } from "@/components/timetable/format";
-import { TeacherDayList } from "@/components/teacher/TeacherDayList";
-import { TeacherWeekTable } from "@/components/teacher/TeacherWeekTable";
+import { TeacherTodayPanel } from "@/components/teacher/TeacherTodayPanel";
+import { TeacherTimetableClient } from "@/components/teacher/TeacherTimetableClient";
+import { WorkloadBreakdown } from "@/components/teacher/WorkloadBreakdown";
 import { WorkloadSummary } from "@/components/teacher/WorkloadSummary";
 import { AppShell } from "@/components/site/app-shell";
 import { requireTeacher } from "@/server/auth/session";
@@ -27,6 +28,10 @@ export default async function TeacherTimetablePage() {
   const teacherLine = [teacher.code, teacher.position, teacher.departmentName]
     .filter((part) => part !== null && part.trim() !== "")
     .join(" · ");
+  const todayDay = days.find((day) => day.isToday) ?? null;
+  const initialNow = new Date();
+  const initialMinutes =
+    initialNow.getHours() * 60 + initialNow.getMinutes();
 
   return (
     <AppShell page="Lịch dạy của tôi" user={user}>
@@ -46,13 +51,21 @@ export default async function TeacherTimetablePage() {
 
         {week ? (
           <>
+            <div className="mb-6">
+              <TeacherTodayPanel day={todayDay} initialMinutes={initialMinutes} />
+            </div>
+
             {workload ? (
-              <div className="mb-6">
+              <div className="mb-6 space-y-3">
                 <WorkloadSummary
                   expectedTeaching={workload.expectedTeaching}
                   scheduled={workload.scheduled}
                   difference={workload.difference}
                   dutyLessons={workload.dutyLessons}
+                />
+                <WorkloadBreakdown
+                  classesTaught={workload.classesTaught}
+                  subjectsTaught={workload.subjectsTaught}
                 />
               </div>
             ) : null}
@@ -62,10 +75,7 @@ export default async function TeacherTimetablePage() {
                 Tuần này bạn chưa có tiết học nào.
               </p>
             ) : (
-              <>
-                <TeacherDayList days={days} />
-                <TeacherWeekTable days={days} />
-              </>
+              <TeacherTimetableClient days={days} />
             )}
 
             <p className="mt-6 border-t border-zinc-200 pt-4 text-xs text-zinc-500">

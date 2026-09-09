@@ -52,13 +52,24 @@ function buildSessionColumns(days: TeacherDayDto[]): SessionColumn[] {
   return columns;
 }
 
-export function TeacherWeekTable({ days }: { days: TeacherDayDto[] }) {
+export function TeacherWeekTable({
+  days,
+  forceVisible = false,
+}: {
+  days: TeacherDayDto[];
+  /** Drop the responsive `hidden lg:block` so the client view switch can pin the table. */
+  forceVisible?: boolean;
+}) {
   if (days.length === 0) return null;
   const columns = buildSessionColumns(days);
   if (columns.length === 0) return null;
 
   return (
-    <div className="hidden space-y-8 lg:block">
+    <div
+      className={
+        forceVisible ? "space-y-8" : "hidden space-y-8 lg:block"
+      }
+    >
       {columns.map((column) => (
         <section key={column.code} aria-label={`Buổi ${column.labelVi}`}>
           <h3 className="mb-2 text-sm font-semibold text-zinc-700">

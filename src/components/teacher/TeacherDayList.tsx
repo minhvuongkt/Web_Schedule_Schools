@@ -3,10 +3,17 @@ import type { TeacherDayDto } from "@/server/services/teacher-view.service";
 import { formatPeriodTime } from "@/components/timetable/format";
 import { LessonStatusBadge, formatLessonClass, lessonTextClass } from "./lesson";
 
-export function TeacherDayList({ days }: { days: TeacherDayDto[] }) {
+export function TeacherDayList({
+  days,
+  forceVisible = false,
+}: {
+  days: TeacherDayDto[];
+  /** Hide the responsive `lg:hidden` so the client view switch can pin the list. */
+  forceVisible?: boolean;
+}) {
   if (days.length === 0) return null;
   return (
-    <div className="space-y-4 lg:hidden">
+    <div className={forceVisible ? "space-y-4" : "space-y-4 lg:hidden"}>
       {days.map((day) => (
         <section
           key={day.date}
