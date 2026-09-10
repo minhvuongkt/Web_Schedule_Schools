@@ -48,6 +48,7 @@ next-env.d.ts
 # embedded postgresql data dirs
 /.postgres-data/
 /.pgdata/
+/.pgdata-fresh/
 /.pg_pwfile
 
 *.md
