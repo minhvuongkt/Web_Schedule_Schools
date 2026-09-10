@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Báo cáo kết quả hệ thống — Thời khóa biểu điện tử Măng Cành</title>
+<style>
+  :root {
+    --ink: #1c1917;
+    --muted: #57534e;
+    --line: #e7e5e4;
+    --brand: #047857;
+    --brand-soft: #ecfdf5;
+    --paper: #ffffff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", "Times New Roman", Arial, sans-serif;
+    color: var(--ink);
+    background: #f5f5f4;
+    line-height: 1.55;
+  }
+  .page {
+    background: var(--paper);
+    max-width: 960px;
+    margin: 24px auto;
+    padding: 48px 56px;
+    box-shadow: 0 2px 16px rgba(0,0,0,.08);
+    min-height: 1300px;
+    page-break-after: always;
+    break-after: page;
+  }
+  @media print {
+    body { background: #fff; }
+    .page { margin: 0; box-shadow: none; max-width: none; min-height: auto; padding: 14mm 12mm; page-break-after: always; }
+    .shot-wrap { page-break-inside: avoid; break-inside: avoid; }
+    .no-print { display: none !important; }
+  }
+  h1 { font-size: 30px; margin: 0 0 8px; }
+  h2 { font-size: 21px; border-bottom: 2px solid var(--brand); padding-bottom: 6px; margin: 0 0 16px; }
+  h3 { font-size: 16px; margin: 20px 0 8px; color: #065f46; }
+  p  { margin: 8px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line); padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #f0fdf4; font-weight: 600; }
+  .shot { width: 100%; border: 1px solid var(--line); border-radius: 8px; display: block; margin: 10px 0 4px; }
+  .shot-wrap { margin: 14px 0 22px; }
+  .shot-cap { font-size: 12.5px; color: var(--muted); margin: 6px 2px 0; }
+  .shot-cap b { color: var(--ink); }
+  .phone { max-width: 330px; margin: 10px auto; }
+  .badge { display: inline-block; background: var(--brand-soft); color: #065f46; border: 1px solid #a7f3d0; border-radius: 999px; padding: 2px 12px; font-size: 12.5px; font-weight: 600; }
+  .ok { color: #047857; font-weight: 700; }
+  .cover-band { background: linear-gradient(135deg, #065f46, #047857); color: #fff; border-radius: 14px; padding: 34px 38px; margin-bottom: 26px; }
+  .cover-band h1 { color: #fff; }
+  .cover-band p { color: #d1fae5; margin: 4px 0; }
+  ul { margin: 6px 0 10px; padding-left: 22px; }
+  li { margin: 3px 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .toc-item { display: flex; justify-content: space-between; border-bottom: 1px dashed var(--line); padding: 7px 2px; font-size: 14.5px; }
+  .toc-item span:last-child { color: var(--muted); }
+  .kv { display: grid; grid-template-columns: 170px 1fr; gap: 4px 14px; font-size: 14px; margin: 10px 0; }
+  .kv dt { font-weight: 600; color: var(--muted); }
+  .kv dd { margin: 0; }
+  footer { margin-top: 30px; border-top: 1px solid var(--line); padding-top: 10px; font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<!-- ============================================================ PAGE 1 — COVER -->
+<section class="page">
+  <div class="cover-band">
+    <h1>Hệ thống Thời khóa biểu điện tử</h1>
+    <p style="font-size:17px;margin-top:6px">Trường PTDTBT TH &amp; THCS Măng Cành · Năm học 2026–2027</p>
+    <p>Báo cáo kết quả triển khai và kiểm thử toàn diện kèm ảnh chụp màn hình từng trang</p>
+  </div>
+
+  <dl class="kv">
+    <dt>Ngày báo cáo</dt><dd>10/09/2026</dd>
+    <dt>Phiên bản</dt><dd>1.0 — bản triển khai production đầu tiên</dd>
+    <dt>Môi trường kiểm tra</dt><dd>Bản build production (`next build` + standalone server), cơ sở dữ liệu PostgreSQL 18 với dữ liệu Tuần 01 (236 tiết, 19 giáo viên, 8 lớp)</dd>
+    <dt>Địa chỉ truy cập</dt>
+<dd>
+  Chính thức (HTTPS): <b>https://tkb.minhvuong.io.vn</b><br/>
+  Trực tiếp VPS (HTTP): <b>http://160.22.106.164</b><br/>
+  Máy phát triển: <b>http://localhost:3000</b>
+</dd>
+    <dt>Chuẩn bị báo cáo</dt><dd>Ảnh chụp màn hình thực tế từ trình duyệt (Edge headless), đăng nhập từng vai trò; nội dung mô tả xác minh trực tiếp trên trang đang chạy</dd>
+  </dl>
+
+  <h2>Tóm tắt kết quả</h2>
+  <table>
+    <tr><th>Hạng mục</th><th>Kết quả</th></tr>
+    <tr><td>Tổng số trang chức năng được kiểm tra &amp; chụp màn hình</td><td class="ok">19 trang — 4 nhóm vai trò</td></tr>
+    <tr><td>Kiểm thử tự động (Vitest — đơn vị + hồi quy dữ liệu thật)</td><td class="ok">128/128 bài kiểm tra đạt</td></tr>
+    <tr><td>Kiểm tra kiểu dữ liệu (TypeScript strict) &amp; chuẩn mã (ESLint)</td><td class="ok">0 lỗi</td></tr>
+    <tr><td>Kiểm thử tải 100 người dùng đồng thời (trang công khai)</td><td class="ok">100% thành công, p99 ≈ 2,5 giây</td></tr>
+    <tr><td>Kiểm thử tải 200 người dùng đồng thời</td><td class="ok">100% thành công, p99 ≈ 4,7 giây</td></tr>
+    <tr><td>Hoạt động end-to-end trên VPS qua HTTPS (Cloudflare + nginx)</td><td class="ok">Đạt — mọi trang 200, đăng nhập hoạt động</td></tr>
+  </table>
+
+  <h2>Phân quyền truy cập</h2>
+  <table>
+    <tr><th>Nhóm người dùng</th><th>Khu vực</th><th>Cần đăng nhập?</th></tr>
+    <tr><td>Học sinh &amp; phụ huynh</td><td><code>/tkb</code>, <code>/hsv</code>, <code>/huong-dan</code></td><td>Không</td></tr>
+    <tr><td>Giáo viên</td><td><code>/gv</code></td><td>Có</td></tr>
+    <tr><td>Ban giám hiệu</td><td><code>/bg</code></td><td>Có</td></tr>
+    <tr><td>Quản trị viên (xếp lịch)</td><td><code>/admin</code></td><td>Có</td></tr>
+  </table>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 1/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 2 — OVERVIEW -->
+<section class="page">
+  <h2>Tổng quan kiến trúc hệ thống</h2>
+
+  <h3>Công nghệ</h3>
+  <ul>
+    <li><b>Next.js 16</b> (App Router) + <b>React 19</b> + TypeScript strict + Tailwind CSS v4</li>
+    <li><b>Prisma 7</b> (PostgreSQL 18) — 34 bảng, migration có kiểm soát</li>
+    <li>PWA: cài được lên màn hình chính, xem offline, nhận thông báo đẩy (Web Push + VAPID)</li>
+    <li>Triển khai Docker multi-stage (standalone) — nginx HTTPS + Cloudflare</li>
+  </ul>
+
+  <h3>Mô hình nghiệp vụ cốt lõi</h3>
+  <table>
+    <tr><th>Khái niệm</th><th>Ý nghĩa</th></tr>
+    <tr><td>Tuần học (Week)</td><td>Đơn vị thời gian của thời khóa biểu; mỗi tuần chứa Thứ 2 → Thứ 7 (thứ Bảy là ngày học chính khóa).</td></tr>
+    <tr><td>Phiên bản (TimetableVersion)</td><td>Mỗi lần xếp lịch tạo một phiên bản riêng: NHÁP → CHỜ DUYỆT → ĐÃ CÔNG BỐ (bản cũ chuyển LƯU TRỮ, không mất).</td></tr>
+    <tr><td>Phân công dự kiến vs thực tế</td><td>TeachingAssignment (PCPN — khối lượng dự kiến) và TimetableEntry (thực xếp) tách bạch; máy đối chiếu chênh lệch tự động.</td></tr>
+    <tr><td>Chỉ hiển thị bản ĐÃ CÔNG BỐ</td><td>Mọi trang công khai chỉ render phiên bản đã công bố — bản nháp không bao giờ lộ ra ngoài.</td></tr>
+    <tr><td>ID nội bộ là mã ổn định</td><td>Mã giáo viên/lớp/môn là khóa; nhãn Excel chỉ là tên hiển thị, được ánh xạ linh hoạt (bỏ dấu, viết tắt).</td></tr>
+  </table>
+
+  <h3>Lộ trình một thời khóa biểu</h3>
+  <p class="small">Quản trị nhập/xếp → kiểm tra xung đột → gửi duyệt → giám hiệu duyệt &amp; công bố → học sinh, giáo viên thấy ngay + nhận thông báo đẩy. Mọi bước ghi nhật ký thao tác (audit).</p>
+
+  <h3>Triển khai trên VPS</h3>
+  <ul>
+    <li>160.22.106.164 (2 vCPU / 2 GB RAM / Ubuntu 22.04) — Docker: PostgreSQL (mạng nội bộ, volume riêng) + app (healthcheck, chạy user thường)</li>
+    <li>nginx :80/:443 TLS → app :3000; Cloudflare proxy chế độ SSL "Full"</li>
+    <li>Dữ liệu Tuần 01 đã nạp và đối chiếu khớp 100% với bảng tính gốc</li>
+  </ul>
+
+  <h3>Mục lục báo cáo</h3>
+  <div class="toc-item"><span>3 — Trang chủ &amp; Đăng nhập</span><span>01–02</span></div>
+  <div class="toc-item"><span>4 — Thời khóa biểu công khai (chọn lớp, chi tiết lớp, hướng dẫn)</span><span>03–05</span></div>
+  <div class="toc-item"><span>5–6 — Ứng dụng học sinh (Sổ tay học sinh)</span><span>06–09</span></div>
+  <div class="toc-item"><span>7 — Khu vực giáo viên</span><span>10–11</span></div>
+  <div class="toc-item"><span>8 — Ban giám hiệu</span><span>12–13</span></div>
+  <div class="toc-item"><span>9–11 — Quản trị viên (xếp lịch, danh mục, tài khoản, nhập Excel, nhật ký, dạy thay)</span><span>14–19</span></div>
+  <div class="toc-item"><span>12 — Kiểm thử &amp; vận hành</span><span>—</span></div>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 2/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 3 — LANDING + LOGIN -->
+<section class="page">
+  <h2>Trang chủ &amp; Đăng nhập</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/01-landing.png" alt="Trang chủ"/>
+    <p class="shot-cap"><b>Hình 01 — Trang chủ (công khai).</b> Điểm đến duy nhất cho 4 nhóm người dùng: thẻ <i>Thời khóa biểu</i> (học sinh/phụ huynh — không cần tài khoản), <i>Sổ tay học sinh</i> (PWA xem hôm nay &amp; tuần), nút <i>Đăng nhập</i> (giáo viên / giám hiệu / quản trị). Thiết kế nhận diện trường Măng Cành, hỗ trợ tối ưu điện thoại.</p>
+  </div>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/02-login.png" alt="Đăng nhập"/>
+    <p class="shot-cap"><b>Hình 02 — Đăng nhập.</b> Form đăng nhập bằng tài khoản do trường cấp. Đăng nhập sai 10 lần trong 15 phút sẽ bị khóa tạm thời theo IP (chống dò mật khẩu). Sau khi đăng nhập, hệ thống tự chuyển đến đúng khu vực theo vai trò: giáo viên → /gv, ban giám hiệu → /bg, quản trị → /admin. Cookie phiên có cờ HttpOnly + SameSite=Lax, phiên sống 7 ngày.</p>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Tài khoản demo môi trường kiểm thử: <code>admin</code>, <code>tkbadmin</code>, <code>principal</code>, <code>t01–t19</code> (mật khẩu tạm <code>Dev@12345</code> — đã cảnh báo đổi trước khi dùng thật).</li>
+    <li>Liên kết nhanh xuống phần cài ứng dụng về màn hình chính (PWA).</li>
+    <li>Chân trang trỏ tới Hướng dẫn sử dụng bằng tiếng Việt (<code>/huong-dan</code>).</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 3/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 4 — TKB PUBLIC -->
+<section class="page">
+  <h2>Thời khóa biểu công khai</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/03-tkb-classes.png" alt="Danh sách lớp"/>
+    <p class="shot-cap"><b>Hình 03 — Chọn lớp.</b> Lưới 8 thẻ lớp (6A → 9B) kèm giáo viên chủ nhiệm. Ô tìm kiếm hiểu cả tiếng Việt không dấu: gõ "toan" ra môn Toán, "nguyen thi" ra giáo viên họ Nguyễn Thị, "8a" ra lớp 8A. Đầu trang hiển thị tuần đang áp dụng (Tuần 01 · 07/09 – 12/09/2026).</p>
+  </div>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/04-tkb-class-6a.png" alt="Chi tiết lớp 6A"/>
+    <p class="shot-cap"><b>Hình 04 — Thời khóa biểu lớp 6A.</b> Chia rõ <b>buổi Sáng</b> (07:00–11:05) và <b>buổi Chiều</b> (13:00–15:25). Trên điện thoại hiển thị dạng danh sách từng ngày (ôm nhẹ khi cuộn); trên máy tính dạng bảng tuần. Ngày hiện tại được tô đậm viền. Badge "Đã công bố" xác nhận đây là bản chính thức.</p>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Mỗi ô tiết hiển thị môn, giáo viên, phòng học (nếu có); các trạng thái đặc biệt có nhãn riêng: Đổi GV · Đã hủy · Dạy bù.</li>
+    <li>Thứ Sáu khối 8–9 có đến 5 tiết sáng (Tiết 5 · 10:20) — đúng nguyên tắc nhà trường, không cố định số tiết.</li>
+    <li>Thứ Bảy là ngày học chính khóa, có tiết buổi sáng.</li>
+    <li>Nút xuất Excel/PDF (một tờ mỗi ngày), mã QR chia sẻ link lớp — học sinh quét là xem được ngay.</li>
+    <li>Nhập sai mã lớp (ví dụ /tkb/8C) trả trang lỗi 404 tiếng Việt "Không tìm thấy lớp".</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 4/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 5 — GUIDE -->
+<section class="page">
+  <h2>Hướng dẫn sử dụng (trong ứng dụng)</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/05-guide.png" alt="Hướng dẫn sử dụng"/>
+    <p class="shot-cap"><b>Hình 05 — /huong-dan.</b> Sổ tay sử dụng viết bằng tiếng Việt dễ hiểu, chia 4 vai trò: Học sinh &amp; phụ huynh · Giáo viên · Ban giám hiệu · Quản trị viên. Trang công khai (không cần đăng nhập), cũng xuất hiện trong menu dọc của giáo viên và quản trị.</p>
+  </div>
+
+  <h3>Nội dung chính</h3>
+  <ul>
+    <li><b>Học sinh &amp; phụ huynh:</b> xem thời khóa biểu, sổ tay học sinh, tìm kiếm không dấu, cài app lên điện thoại (xem offline).</li>
+    <li><b>Giáo viên:</b> đăng nhập, khung "Hôm nay", lịch tuần, dạy thay/dạy bù, bật thông báo đẩy, in lịch (Ctrl+P).</li>
+    <li><b>Ban giám hiệu:</b> tổng quan, phê duyệt → công bố (kèm diễn giải điều gì xảy ra sau khi bấm).</li>
+    <li><b>Quản trị:</b> soạn lịch từng bước (bản nháp → thêm/kéo-thả/Ctrl-sao-chép → Kiểm tra → Gửi duyệt), dạy thay &amp; dạy bù, nhập Excel (xem trước → nhập khẩu), tài khoản, danh mục, nhật ký.</li>
+    <li>Mục <b>Câu hỏi thường gặp</b>: quên mật khẩu, chưa thấy lịch, mất mạng, dùng điện thoại.</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 5/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 6 — STUDENT APP 1 -->
+<section class="page">
+  <h2>Ứng dụng học sinh — Sổ tay (1/2)</h2>
+  <p class="muted small">Chụp trên khung màn hình điện thoại (390×844). Ứng dụng có vỏ riêng (không phải menu trang công khai) + thanh điều hướng đáy màn hình luôn ghim: Trang chủ · Thời khóa biểu · Thông báo · Hồ sơ.</p>
+
+  <div class="two-col">
+    <div class="shot-wrap">
+      <img class="shot" src="screenshots/06-student-home.png" alt="Sổ tay — hôm nay"/>
+      <p class="shot-cap"><b>Hình 06 — Trang chủ /hsv.</b> Chọn lớp một lần (hệ thống nhớ trên máy). Thẻ <b>Tiết kế tiếp</b> đếm ngược tới giờ học; danh sách <b>hôm nay</b> chia buổi Sáng/Chiều với giờ mỗi tiết.</p>
+    </div>
+    <div class="shot-wrap">
+      <img class="shot phone" src="screenshots/07-student-week.png" alt="Thời khóa biểu tuần"/>
+      <p class="shot-cap"><b>Hình 07 — Thời khóa biểu tuần.</b> Dải ngày T2→T7 cỡ lớn, dễ bấm; "Hôm nay" nổi bật. Chi tiết ngày chia rõ Sáng (nhãn đỏ mận + giờ) / Chiều (nhãn xanh dương).</p>
+    </div>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Không cần tài khoản — chọn lớp lưu localStorage, đồng bộ qua mọi trang con (?lop=).</li>
+    <li>Hộp chọn lớp (góc phải) cập nhật tức thì khi đổi; deep-link và nút back/forward cũng cập nhật đúng.</li>
+    <li>Thẻ "Tiết kế tiếp": môn, giáo viên, phòng, dòng đếm ngược thời gian thực.</li>
+    <li>Buổi sáng/chiều hiển thị số tiết + khoảng giờ của buổi (vd "Sáng · 4 tiết · 07:00 – 10:15").</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 6/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 7 — STUDENT APP 2 -->
+<section class="page">
+  <h2>Ứng dụng học sinh — Sổ tay (2/2)</h2>
+
+  <div class="two-col">
+    <div class="shot-wrap">
+      <img class="shot phone" src="screenshots/08-student-notifications.png" alt="Thông báo lớp"/>
+      <p class="shot-cap"><b>Hình 08 — Thông báo /hsv/thong-bao.</b> Mọi thay đổi ảnh hưởng lớp đã chọn: công bố lịch mới, đổi giáo viên, hủy tiết, dạy bù — mỗi loại một nhãn màu riêng kèm mốc thời gian.</p>
+    </div>
+    <div class="shot-wrap">
+      <img class="shot phone" src="screenshots/09-student-profile.png" alt="Hồ sơ"/>
+      <p class="shot-cap"><b>Hình 09 — Hồ sơ /hsv/ho-so.</b> Lớp của tôi (đổi tại đây), GVCN, khối, thông tin trường, khung giờ buổi sáng/chiều. Ghi chú về ngày học thứ Bảy và 5 tiết sáng thứ Sáu.</p>
+    </div>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Thông báo lọc theo lớp — không nhiễu bởi lớp khác.</li>
+    <li>Cài app (PWA): thêm vào màn hình chính Android/iPhone; mở toàn màn hình như app thường, phần đã xem vẫn mở được khi mất mạng (service worker cache).</li>
+    <li>Bật thông báo đẩy: nhận tin ngay cả khi app đóng (Web Push qua VAPID đã cấu hình trên VPS).</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 7/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 8 — TEACHER -->
+<section class="page">
+  <h2>Khu vực giáo viên</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/10-teacher-home.png" alt="Lịch dạy của tôi"/>
+    <p class="shot-cap"><b>Hình 10 — Lịch dạy của tôi /gv.</b> Dải chỉ số: <b>Dự kiến</b> (PCPN) · <b>Đã xếp</b> (thực tế) · <b>Chênh lệch</b> — giáo viên nhìn một chỗ biết đủ/thiếu tiết. Khung "Hôm nay" liệt kê tiết đang dạy và tiết kế tiếp; bên dưới là lịch tuần (đổi dạng Danh sách/Bảng, lọc theo lớp hoặc môn).</p>
+  </div>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/11-teacher-notifications.png" alt="Thông báo giáo viên"/>
+    <p class="shot-cap"><b>Hình 11 — Thông báo /gv/thong-bao.</b> Hệ thống đẩy thông báo khi: được xếp dạy thay (kèm tên GV gốc), tiết bị hủy, tiết dạy bù được tạo, thời khóa biểu tuần mới được công bố. Bấm "Bật thông báo" để nhận trên điện thoại.</p>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Chỉ thấy dữ liệu của mình — không thấy lịch/lương tiết giáo viên khác.</li>
+    <li>Tiết dạy thay hiện nhãn "Dạy thay cho …"; số "Đã xếp" tự +1 để khớp thực tế giảng dạy.</li>
+    <li>In lịch cá nhân (Ctrl+P) với bản in sạch (đã tách CSS print).</li>
+    <li>Không có quyền truy cập /admin → chuyển hướng "Không có quyền truy cập".</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 8/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 9 — LEADERSHIP -->
+<section class="page">
+  <h2>Khu vực ban giám hiệu</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/12-leadership-overview.png" alt="Tổng quan"/>
+    <p class="shot-cap"><b>Hình 12 — Tổng quan /bg.</b> Bảng khối lượng 19 giáo viên: dạy chính, kiêm nhiệm, tổng PCPN so với thực xếp — phát hiện ngay ai bị thiếu/thừa tiết. Danh sách phiên bản thời khóa biểu kèm trạng thái (NHÁP / CHỜ DUYỆT / ĐÃ CÔNG BỐ) và nút phê duyệt bản đang chờ.</p>
+  </div>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/13-leadership-assignments.png" alt="Phân công"/>
+    <p class="shot-cap"><b>Hình 13 — Phân công giảng dạy /bg/phan-cong.</b> Bảng nhóm theo giáo viên: từng lớp/môn phụ trách kèm số tiết, tổng Dạy + Kiểm nhiệm. Quản trị có thể thêm/sửa/gỡ phân công (bắt buộc không vượt ngưỡng policy).</p>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Duyệt &amp; công bố: sau khi quản trị "Gửi duyệt", hiệu trưởng bấm <b>Phê duyệt</b> rồi <b>Công bố</b> — ngay lập tức: trang công khai đổi sang bản mới, toàn bộ giáo viên nhận thông báo, bản cũ chuyển LƯU TRỮ (quay lại được bất cứ lúc nào).</li>
+    <li>Không được tự sửa nội dung tiết học — phân quyền ghi chặt (chỉ đọc + duyệt).</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 9/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 10 — ADMIN PLANNER -->
+<section class="page">
+  <h2>Quản trị — Trình soạn thời khóa biểu</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/14-admin-planner.png" alt="Trình soạn"/>
+    <p class="shot-cap"><b>Hình 14 — /admin (đăng nhập tkbadmin).</b> Lưới tuần đầy đủ: cột = lớp, hàng = buổi/tiết; ô có bài hiện môn + giáo viên. Chọn tuần, chọn phiên bản; nhãn trạng thái; thanh công cụ tạo bản nháp / nhân bản tuần / sao chép ngày / sao chép lớp.</p>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li><b>Thêm/sửa:</b> bấm ô trống → panel chọn môn + giáo viên → Lưu; bấm ô đã có để sửa/xóa.</li>
+    <li><b>Kéo-thả:</b> kéo tiết sang ô khác; giữ <kbd>Ctrl</kbd> khi kéo để <b>sao chép</b> (gốc giữ nguyên). Còn sao chép cả ngày hoặc cả lớp chỉ với 1 nút.</li>
+    <li><b>Chống xung đột cứng:</b> hệ thống chặn xếp 2 lớp cho cùng giáo viên một tiết, 2 tiết cho cùng lớp một ô… (cả ràng buộc partial unique ở tầng DB — an toàn cả khi hai người cùng sửa).</li>
+    <li><b>Kiểm tra:</b> nút liệt kê lỗi (chặn duyệt) và cảnh báo (nên xem lại: nghỉ phép, dồn tiết, lệch PCPN).</li>
+    <li><b>Hoàn tác</b> Ctrl+Z có hỗ trợ phía server (revision + undo log), và khóa phiên bản khi đã gửi duyệt.</li>
+    <li>Ô điều khiển revision trên từng thao tác — hai tab cùng sửa sẽ được phát hiện (409 VERSION_OUTDATED).</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 10/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 11 — ADMIN OTHERS -->
+<section class="page">
+  <h2>Quản trị — Danh mục, Tài khoản, Nhập Excel</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/15-admin-catalogs.png" alt="Danh mục"/>
+    <p class="shot-cap"><b>Hình 15 — Danh mục /admin/danh-muc.</b> CRUD giáo viên (kèm tên viết tắt dùng khi nhập Excel), lớp, môn học + tổ hợp môn (VD "KHTN(L)" = KHTN·Lý), phòng học, phân công dự kiến (PCPN).</p>
+  </div>
+
+  <div class="two-col">
+    <div class="shot-wrap">
+      <img class="shot" src="screenshots/16-admin-accounts.png" alt="Tài khoản"/>
+      <p class="shot-cap"><b>Hình 16 — Tài khoản /admin/tai-khoan.</b> Tạo tài khoản, gán vai trò, cấp lại mật khẩu (hiện một lần rồi phải copy giao), khóa/mở; không thể tự khóa chính mình.</p>
+    </div>
+    <div class="shot-wrap">
+      <img class="shot" src="screenshots/17-admin-import.png" alt="Nhập Excel"/>
+      <p class="shot-cap"><b>Hình 17 — Nhập Excel /admin/import.</b> Kéo-thả tệp, tải file mẫu; "Xem trước" liệt kê đủ tiết, lỗi, cảnh báo, gợi ý ("Nguyễn Vân" → Nguyễn Thị Vân) trước khi "Nhập vào" (xác nhận từng bước).</p>
+    </div>
+  </div>
+
+  <h3>Nhập Excel — quy trình 2 pha an toàn</h3>
+  <ul>
+    <li><b>Xem trước (không ghi):</b> parse + ánh xạ + kiểm tra xung đột; phát hiện trùng ô trong tệp (DUPLICATE_SLOT), ngày ngoài tuần, sai khoảng ngày tiêu đề.</li>
+    <li><b>Nhập (all-or-nothing):</b> chạy lại toàn bộ kiểm tra trong 1 transaction — có lỗi thì không ghi dòng nào; thành công tạo bản NHÁP mới (chưa ảnh hưởng lịch đang công bố).</li>
+    <li>Chỉ nhận .xls/.xlsx tối đa 10 MB, trang tính tên chứa "TKB"; Excel mẫu do hệ thống sinh ra khớp tuần + lớp hiện có.</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 11/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 12 — AUDIT + SUBS -->
+<section class="page">
+  <h2>Quản trị — Nhật ký &amp; Dạy thay</h2>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/18-admin-audit.png" alt="Nhật ký"/>
+    <p class="shot-cap"><b>Hình 18 — Nhật ký thao tác /admin/audit.</b> Ghi lại đầy đủ: ai, làm gì, lúc nào, trên đối tượng nào (TẠO/SỬA/XÓA/IMPORT/CÔNG BỐ…). Lọc theo loại đối tượng và phân trang — công cụ truy vết khi có thắc mắc "ai đổi lịch".</p>
+  </div>
+
+  <div class="shot-wrap">
+    <img class="shot" src="screenshots/19-admin-substitutions.png" alt="Dạy thay"/>
+    <p class="shot-cap"><b>Hình 19 — Dạy thay &amp; dạy bù /admin/thay-giao.</b> Bấm vào tiết cần xử lý: chọn GV dạy thay (chỉ gợi ý GV rảnh, đã bận sẽ bị chặn kèm lý do) hoặc hủy tiết, rồi tạo tiết dạy bù vào ô trống khác.</p>
+  </div>
+
+  <h3>Chức năng chi tiết</h3>
+  <ul>
+    <li>Dạy thay áp dụng trên bản ĐÃ CÔNG BỐ — hiệu lực tức thì, không cần công bố lại.</li>
+    <li>Hiệu ứng dây chuyền tự động: GV được xếp nhận thông báo; trang /gv của họ hiện "Dạy thay cho …"; chỉ số "Đã xếp" +1; trang công khai đổi tên GV tại tiết đó.</li>
+    <li>Hủy tiết → học sinh thấy nhãn "Đã hủy"; dạy bù tạo mục mới (MAKEUP) tại ô trống và cũng đẩy thông báo.</li>
+    <li>Hoàn tác thay đổi dễ dàng (hủy phân công dạy thay → tiết về NORMAL).</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Trang 12/12</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 13 — QA -->
+<section class="page">
+  <h2>Kiểm thử chất lượng &amp; vận hành</h2>
+
+  <h3>Kết quả kiểm thử tự động</h3>
+  <table>
+    <tr><th>Bộ kiểm tra</th><th>Kết quả</th><th>Ghi chú</th></tr>
+    <tr><td>Phân tích Excel (đơn vị + hồi quy tệp thật)</td><td class="ok">128/128</td><td>Bao gồm khớp 236 tiết Tuần 01 với fixture kiểm chứng độc lập</td></tr>
+    <tr><td>Engine xung đột / đối chiếu PCPN</td><td class="ok">Đạt</td><td>19 giáo viên khớp 100% dự kiến ↔ thực xếp</td></tr>
+    <tr><td>TypeScript strict + ESLint</td><td class="ok">0 lỗi</td><td>Chạy trên toàn bộ mã nguồn</td></tr>
+    <tr><td>Production build (standalone)</td><td class="ok">Thành công</td><td>Docker multi-stage, chạy user thường, healthcheck</td></tr>
+  </table>
+
+  <h3>Kiểm thử tải (100 &amp; 200 người đồng thời)</h3>
+  <table>
+    <tr><th>Kịch bản</th><th>Tỷ lệ thành công</th><th>Độ trễ p50 / p99</th></tr>
+    <tr><td>100 truy cập đồng thời (trang có DB)</td><td class="ok">100%</td><td>≈ 2,4 s / 2,5 s (đỉnh bùng)</td></tr>
+    <tr><td>200 truy cập đồng thời</td><td class="ok">100%</td><td>≈ 4,6 s / 4,7 s (đỉnh bùng)</td></tr>
+  </table>
+  <p class="small muted">Kịch bản mô phỏng giờ cao điểm 7h sáng (cả trường mở app cùng lúc). Sau đỉnh, độ trễ trở về hàng chục mili-giây. PWA cache giúp lượt truy cập lại gần như không chạm server. RAM đo được: app ≈ 123 MB, PostgreSQL ≈ 82 MB — máy 2 GB còn nhiều dư địa.</p>
+
+  <h3>Kiểm tra end-to-end trên VPS (10/09/2026)</h3>
+  <table>
+    <tr><th>Trang / chức năng</th><th>Kết quả</th></tr>
+    <tr><td>Trang chủ, /tkb, /tkb/6A, /hsv, /huong-dan, /dang-nhap (qua https://tkb.minhvuong.io.vn)</td><td class="ok">200</td></tr>
+    <tr><td>Đăng nhập admin + giáo viên</td><td class="ok">200</td></tr>
+    <tr><td>/admin với phiên đăng nhập</td><td class="ok">200</td></tr>
+    <tr><td>50 truy cập đồng thời từ ngoài internet</td><td class="ok">50/50 · 2,2 s</td></tr>
+  </table>
+
+  <h3>Khuyến nghị trước khi đưa vào sử dụng thật</h3>
+  <ul>
+    <li><b>Đổi toàn bộ mật khẩu demo</b> (admin, tkbadmin, principal, t01–t19) — hệ thống đang công khai trên internet.</li>
+    <li>Cloudflare: giữ chế độ SSL "Full"; bật "Always Use HTTPS" (tùy chọn).</li>
+    <li>Sao lưu định kỳ: <code>docker compose exec db pg_dump -U school school_timetable</code> (kèm volume db-data).</li>
+    <li>Nâng cấp bản mới: git pull → docker compose up -d --build (build tốn RAM ~2 GB, nên chạy lúc ít người dùng).</li>
+  </ul>
+
+  <footer><span>Hệ thống Thời khóa biểu điện tử — Măng Cành</span><span>Phụ lục — Kiểm thử &amp; vận hành</span></footer>
+</section>
+
+</body>
+</html>
