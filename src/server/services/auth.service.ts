@@ -116,10 +116,19 @@ export async function resolveSessionUser(token: string): Promise<SessionUser | n
 }
 
 export function sessionCookieOptions() {
+  // COOKIE_SECURE: explicit override for deployments served over plain HTTP
+  // (e.g. IP-only access before a domain + TLS exist). Browsers refuse to
+  // store Secure cookies on insecure origins, which silently breaks login.
+  // Default: secure iff production (HTTPS assumed).
+  const override = process.env.COOKIE_SECURE;
+  const secure =
+    override === "true" || override === "false"
+      ? override === "true"
+      : process.env.NODE_ENV === "production";
   return {
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure,
     path: "/",
     maxAge: Math.floor(SESSION_TTL_MS / 1000),
   };
