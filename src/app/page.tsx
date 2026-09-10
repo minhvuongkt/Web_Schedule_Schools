@@ -2,11 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { InstallPrompt } from "@/components/pwa/install-prompt";
+import {
+  UserChip,
+  WorkspaceButton,
+} from "@/components/site/public-chrome";
+import { WORKSPACE_BY_ROLE } from "@/components/site/workspace";
 import { formatWeekLabel } from "@/components/timetable/format";
 import { Icon } from "@/components/ui/icon";
 import type { IconName } from "@/components/ui/icon";
 import { getCurrentUser } from "@/server/auth/session";
-import type { Role } from "@/server/domain/roles";
 import { getLandingData, type LandingPeek } from "@/server/services/landing.service";
 import type { DayDto } from "@/server/services/timetable-read.service";
 
@@ -56,15 +60,6 @@ function morningOf(day: DayDto) {
     null
   );
 }
-
-const WORKSPACE_BY_ROLE: Partial<Record<Role, { href: string; label: string }>> = {
-  TEACHER: { href: "/gv", label: "Lịch dạy của tôi" },
-  PRINCIPAL: { href: "/bg", label: "Bảng điều khiển" },
-  SUPER_ADMIN: { href: "/admin", label: "Soạn thời khóa biểu" },
-  TIMETABLE_ADMIN: { href: "/admin", label: "Soạn thời khóa biểu" },
-  STUDENT: { href: "/hsv", label: "Sổ tay học sinh" },
-  PARENT: { href: "/hsv", label: "Sổ tay học sinh" },
-};
 
 function dayShortLabel(day: DayDto): string {
   return day.dayOfWeek === 7 ? "CN" : `T${day.dayOfWeek + 1}`;
@@ -303,6 +298,28 @@ export default async function LandingPage() {
     : null;
   const workspace = user ? WORKSPACE_BY_ROLE[user.role] : undefined;
 
+  // Staff role cards flip from "login" targets to the user's own workspace
+  // once they are authenticated — no login button is ever shown again.
+  // Non-matching cards keep their section link; RBAC explains the rest.
+  const teacherCard =
+    user?.role === "TEACHER"
+      ? { badge: "Đã đăng nhập", badgeClass: "bg-emerald-50 text-emerald-700", href: "/gv", cta: "Vào lịch dạy của tôi" }
+      : user
+        ? { badge: "Dành cho giáo viên", badgeClass: "bg-stone-100 text-stone-600", href: "/gv", cta: "Xem lịch dạy giáo viên" }
+        : { badge: "Cần đăng nhập", badgeClass: "bg-stone-100 text-stone-600", href: "/dang-nhap?next=%2Fgv", cta: "Đăng nhập để xem lịch dạy" };
+  const principalCard =
+    user?.role === "PRINCIPAL"
+      ? { badge: "Đã đăng nhập", badgeClass: "bg-emerald-50 text-emerald-700", href: "/bg", cta: "Vào bảng điều khiển" }
+      : user
+        ? { badge: "Dành cho hiệu trưởng", badgeClass: "bg-stone-100 text-stone-600", href: "/bg", cta: "Xem bảng điều khiển" }
+        : { badge: "Cần đăng nhập", badgeClass: "bg-stone-100 text-stone-600", href: "/dang-nhap?next=%2Fbg", cta: "Đăng nhập vào bảng điều khiển" };
+  const adminCard =
+    user?.role === "SUPER_ADMIN" || user?.role === "TIMETABLE_ADMIN"
+      ? { badge: "Đã đăng nhập", badgeClass: "bg-emerald-50 text-emerald-700", href: "/admin", cta: "Vào trình soạn thời khóa biểu" }
+      : user
+        ? { badge: "Dành cho quản trị viên", badgeClass: "bg-stone-100 text-stone-600", href: "/admin", cta: "Xem trình soạn thời khóa biểu" }
+        : { badge: "Cần đăng nhập", badgeClass: "bg-stone-100 text-stone-600", href: "/dang-nhap?next=%2Fadmin", cta: "Đăng nhập vào trình soạn" };
+
   return (
     <div className="flex flex-1 flex-col" style={{ backgroundColor: PAPER }}>
       <header className="sticky top-0 z-40 border-b border-stone-200/80 bg-[#FAF7EF]/90 backdrop-blur">
@@ -326,14 +343,17 @@ export default async function LandingPage() {
             >
               Sổ tay học sinh
             </Link>
-            {user && workspace ? (
-              <Link
-                href={workspace.href}
-                className="ml-1 inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 active:scale-[0.98]"
-              >
-                <Icon name="user" size={16} />
-                {workspace.label}
-              </Link>
+            {user ? (
+              <>
+                <UserChip user={user} />
+                {workspace ? (
+                  <WorkspaceButton
+                    href={workspace.href}
+                    label={workspace.label}
+                    compact
+                  />
+                ) : null}
+              </>
             ) : (
               <Link
                 href="/dang-nhap"
@@ -394,13 +414,10 @@ export default async function LandingPage() {
               <InstallPrompt compact />
             </div>
             <p className="mt-6 text-sm text-stone-500">
-              {user && workspace ? (
+              {user ? (
                 <>
-                  Xin chào, <span className="font-medium text-stone-900">{user.displayName}</span> —{" "}
-                  <Link href={workspace.href} className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2 hover:text-emerald-900 hover:decoration-emerald-500">
-                    vào không gian làm việc của bạn
-                  </Link>
-                  .
+                  Xin chào, <span className="font-medium text-stone-900">{user.displayName}</span>{" "}
+                  — thời khóa biểu tuần này đã sẵn sàng.
                 </>
               ) : (
                 <>
@@ -512,15 +529,15 @@ export default async function LandingPage() {
               bubbleClass="bg-amber-100 text-amber-800"
               linkClass="text-amber-700 hover:text-amber-900"
               title="Giáo viên"
-              badge="Cần đăng nhập"
-              badgeClass="bg-stone-100 text-stone-600"
+              badge={teacherCard.badge}
+              badgeClass={teacherCard.badgeClass}
               bullets={[
                 "Lịch dạy cá nhân theo tuần, bao gồm dạy thay và dạy bù",
                 "Thông báo tức thì khi được xếp dạy thay",
                 "Xuất lịch dạy của mình ra file in",
               ]}
-              href="/dang-nhap?next=%2Fgv"
-              cta="Đăng nhập để xem lịch dạy"
+              href={teacherCard.href}
+              cta={teacherCard.cta}
               delay={80}
             />
             <RoleCard
@@ -528,15 +545,15 @@ export default async function LandingPage() {
               bubbleClass="bg-teal-100 text-teal-800"
               linkClass="text-teal-700 hover:text-teal-900"
               title="Ban giám hiệu"
-              badge="Cần đăng nhập"
-              badgeClass="bg-stone-100 text-stone-600"
+              badge={principalCard.badge}
+              badgeClass={principalCard.badgeClass}
               bullets={[
                 "Tổng quan khối lượng giáo dục toàn trường",
                 "Phê duyệt và công bố thời khóa biểu từng tuần",
                 "Quản lý phân công giáo dục theo từng giáo viên",
               ]}
-              href="/dang-nhap?next=%2Fbg"
-              cta="Đăng nhập vào bảng điều khiển"
+              href={principalCard.href}
+              cta={principalCard.cta}
               delay={160}
             />
             <RoleCard
@@ -544,15 +561,15 @@ export default async function LandingPage() {
               bubbleClass="bg-rose-100 text-rose-700"
               linkClass="text-rose-700 hover:text-rose-900"
               title="Quản trị viên"
-              badge="Cần đăng nhập"
-              badgeClass="bg-stone-100 text-stone-600"
+              badge={adminCard.badge}
+              badgeClass={adminCard.badgeClass}
               bullets={[
                 "Soạn thời khóa biểu kéo-thả, kiểm tra xung đột tự động",
                 "Nhập và xuất Excel, in ấn, chia sẻ qua mã QR",
                 "Điều phối thay giáo viên, dạy bù và xem nhật ký hệ thống",
               ]}
-              href="/dang-nhap?next=%2Fadmin"
-              cta="Đăng nhập vào trình soạn"
+              href={adminCard.href}
+              cta={adminCard.cta}
               delay={240}
             />
           </div>
@@ -683,11 +700,19 @@ export default async function LandingPage() {
           <div>
             <h3 className="text-sm font-semibold text-white">Giáo viên và cán bộ</h3>
             <ul className="mt-4 space-y-2.5 text-sm">
-              <li>
-                <Link href="/dang-nhap" className="transition hover:text-white">
-                  Đăng nhập
-                </Link>
-              </li>
+              {user && workspace ? (
+                <li>
+                  <Link href={workspace.href} className="font-medium text-emerald-200 transition hover:text-white">
+                    {workspace.label} của bạn
+                  </Link>
+                </li>
+              ) : (
+                <li>
+                  <Link href="/dang-nhap" className="transition hover:text-white">
+                    Đăng nhập
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/gv" className="transition hover:text-white">
                   Lịch dạy giáo viên
