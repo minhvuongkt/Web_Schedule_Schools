@@ -708,6 +708,7 @@ export async function copyEntries(
       "CREATE",
       "TimetableEntry",
       null,
+      null,
       {
         mode: input.mode,
         copiedCount: ids.length,

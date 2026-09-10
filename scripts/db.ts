@@ -124,19 +124,21 @@ function start(): void {
   // Machine quirk: postgres.exe must run with an attached console — when
   // spawned detached (pg_ctl / DETACHED_PROCESS / CREATE_NO_WINDOW), backend
   // children die at spawn (0xC0000142, then shared-memory error 487 on every
-  // connection). `cmd start` gives the server its own minimized console,
-  // which also keeps it running after this script exits.
+  // connection). Start-Process gives the server its own (minimized) console
+  // and — unlike a direct child_process spawn — the server survives this
+  // script and its parent shell exiting. logging_collector redirects server
+  // logs into <data>/log/ so crashes are diagnosable even after the console
+  // window is gone.
   const exe = path.join(BIN, "postgres.exe");
-  const cmdline = `/c start "PostgreSQL (embedded dev)" /min "${exe}" -D "${DATA_DIR}" -p ${PORT}`;
-  const child = spawn(
-    process.env.ComSpec ?? "cmd.exe",
-    [cmdline],
-    {
-      windowsVerbatimArguments: true,
-      stdio: "ignore",
-      detached: true,
-    },
-  );
+  const ps = [
+    "Start-Process",
+    `-FilePath '${exe.replace(/'/g, "''")}'`,
+    `-ArgumentList @('-D','${DATA_DIR.replace(/'/g, "''")}','-p','${PORT}','-c','logging_collector=on','-c','log_min_messages=warning')`,
+    "-WindowStyle Minimized",
+  ].join(" ");
+  const child = spawn("powershell.exe", ["-NoProfile", "-Command", ps], {
+    stdio: "ignore",
+  });
   child.unref();
 }
 
@@ -173,6 +175,9 @@ async function main(): Promise<void> {
       await waitForReadiness();
       await ensureDatabase();
       console.log(`PostgreSQL ready: localhost:${PORT}/${DATABASE}`);
+      // Exit explicitly: the detached console-window server must not keep
+      // this script's event loop (or the calling shell) alive.
+      process.exit(0);
       break;
     case "stop":
       ctl(["-D", DATA_DIR, "stop", "-m", "fast"]);
