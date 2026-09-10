@@ -21,8 +21,11 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-school}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-school_timetable}
+    # postgres:18+ stores data in a major-version subdirectory — mount the
+    # parent (docker-library/postgres#1259); mounting /var/lib/postgresql/data
+    # makes the container refuse to start with a layout error.
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
     # Private only: no ports published to the host; the app reaches it on the
     # compose network. Drop this healthcheck override if you need host access.
     healthcheck:
