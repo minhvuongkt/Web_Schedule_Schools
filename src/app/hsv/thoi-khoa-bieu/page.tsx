@@ -19,20 +19,18 @@ export default async function StudentTimetablePage({
   const view = urlClass ? await getStudentTodayView(urlClass) : null;
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-4">
-      <StudentWeekClient
-        classes={classes.map((c) => ({ code: c.code, grade: c.grade }))}
-        initialClass={urlClass ?? null}
-        view={
-          view
-            ? {
-                classInfo: view.classInfo,
-                week: view.week,
-                days: view.days,
-              }
-            : null
-        }
-      />
-    </main>
+    <StudentWeekClient
+      classes={classes.map((c) => ({ code: c.code, grade: c.grade }))}
+      initialClass={urlClass ?? null}
+      view={
+        view
+          ? {
+              classInfo: view.classInfo,
+              week: view.week,
+              days: view.days,
+            }
+          : null
+      }
+    />
   );
 }

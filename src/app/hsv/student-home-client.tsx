@@ -1,10 +1,8 @@
 "use client";
 
 import { UiLink } from "@/components/ui/link";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { StudentTodayView } from "@/server/services/student-view.service";
-import { ClassPicker, studentClassStorage } from "@/components/student/class-picker";
+import { ClassPicker, useStudentClass } from "@/components/student/class-picker";
 import { NextLessonCountdown } from "@/components/student/next-lesson-countdown";
 import { StudentDayPeriods } from "@/components/student/student-day-periods";
 import { Icon } from "@/components/ui/icon";
@@ -23,22 +21,7 @@ interface Props {
 }
 
 export function StudentHomeClient({ classes, initialClass, todayLabel, view }: Props) {
-  const router = useRouter();
-  const [selected] = useState<string | null>(initialClass);
-
-  useEffect(() => {
-    if (!initialClass) {
-      const stored = studentClassStorage().get();
-      if (stored && classes.some((c) => c.code === stored)) {
-        router.push(`/hsv?lop=${encodeURIComponent(stored)}`);
-      }
-    }
-  }, [initialClass, classes, router]);
-
-  const onChange = (code: string) => {
-    studentClassStorage().set(code);
-    router.push(`/hsv?lop=${encodeURIComponent(code)}`);
-  };
+  const { selected, onChange } = useStudentClass(initialClass, classes, "/hsv");
 
   return (
     <div>

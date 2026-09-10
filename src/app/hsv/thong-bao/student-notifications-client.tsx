@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ClassPicker, studentClassStorage } from "@/components/student/class-picker";
+import { ClassPicker, useStudentClass } from "@/components/student/class-picker";
 
 interface NotificationItem {
   id: string;
@@ -34,24 +32,7 @@ export function StudentNotificationsClient({
   initialClass: string | null;
   initialNotifications: NotificationItem[];
 }) {
-  const router = useRouter();
-  const [selected] = useState<string | null>(initialClass);
-
-  useEffect(() => {
-    if (initialClass) {
-      studentClassStorage().set(initialClass);
-      return;
-    }
-    const stored = studentClassStorage().get();
-    if (stored && classes.some((c) => c.code === stored)) {
-      router.replace(`/hsv/thong-bao?lop=${encodeURIComponent(stored)}`);
-    }
-  }, [initialClass, classes, router]);
-
-  const onChange = (code: string) => {
-    studentClassStorage().set(code);
-    router.push(`/hsv/thong-bao?lop=${encodeURIComponent(code)}`);
-  };
+  const { selected, onChange } = useStudentClass(initialClass, classes, "/hsv/thong-bao");
 
   return (
     <div>

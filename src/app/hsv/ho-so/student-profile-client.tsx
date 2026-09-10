@@ -1,8 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ClassPicker, studentClassStorage } from "@/components/student/class-picker";
+import { ClassPicker, useStudentClass } from "@/components/student/class-picker";
 
 interface Props {
   classes: { code: string; grade: number }[];
@@ -19,26 +17,7 @@ const GRADE_LABEL: Record<number, string> = {
 };
 
 export function StudentProfileClient({ classes, initialClass, classInfo, schoolName }: Props) {
-  const router = useRouter();
-  const [selected, setSelected] = useState<string | null>(initialClass);
-
-  useEffect(() => {
-    if (initialClass) {
-      studentClassStorage().set(initialClass);
-      return;
-    }
-    const stored = studentClassStorage().get();
-    if (stored && classes.some((c) => c.code === stored) && stored !== selected) {
-      void stored;
-      router.replace(`/hsv/ho-so?lop=${encodeURIComponent(stored)}`);
-    }
-  }, [initialClass, classes, selected, router]);
-
-  const onChange = (code: string) => {
-    studentClassStorage().set(code);
-    setSelected(code);
-    router.push(`/hsv/ho-so?lop=${encodeURIComponent(code)}`);
-  };
+  const { selected, onChange } = useStudentClass(initialClass, classes, "/hsv/ho-so");
 
   return (
     <div>
