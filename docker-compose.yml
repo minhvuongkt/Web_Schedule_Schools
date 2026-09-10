@@ -1,0 +1,81 @@
+# Production stack for a single VPS: PostgreSQL + one-shot migrations + app.
+#
+#   cp .env.example .env            (or export the vars below) — then:
+#   docker compose up -d            # db → migrate → app
+#   docker compose --profile seed run seed   # DEV ONLY: wipe + load fixture
+#
+# The app is single-instance by design (in-process login rate limiter, SSE
+# event bus, push fan-out — see docs/deployment.md). Scale the VPS, not the
+# replica count.
+
+services:
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    # Small-VPS tuning (1 GB RAM): uncomment to cap Postgres memory.
+    # See "Is a 1 vCPU / 1 GB RAM VPS enough?" in docs/deployment.md.
+    # command: >
+    #   postgres -c shared_buffers=64MB -c max_connections=25
+    #            -c effective_cache_size=256MB
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-school}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-school_timetable}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # Private only: no ports published to the host; the app reaches it on the
+    # compose network. Drop this healthcheck override if you need host access.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-school} -d $${POSTGRES_DB:-school_timetable}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  migrate:
+    build:
+      context: .
+      target: migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-school}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-school_timetable}
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      target: runner
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-school}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-school_timetable}
+      # Web Push (optional — generate with `npm run vapid:generate`).
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:tkb@example.edu.vn}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+  # DEV ONLY — wipes the database and reloads the Week 01 fixture + demo users.
+  #   docker compose --profile seed run --rm seed
+  seed:
+    build:
+      context: .
+      target: migrate
+    profiles: ["seed"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-school}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-school_timetable}
+      SEED_DEV_PASSWORD: ${SEED_DEV_PASSWORD:-Dev@12345}
+    command: ["npx", "tsx", "prisma/seed.ts"]
+    restart: "no"
+
+volumes:
+  db-data:

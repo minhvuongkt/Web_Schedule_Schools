@@ -15,11 +15,13 @@ import path from "node:path";
 import * as XLSX from "xlsx";
 import { describe, expect, it } from "vitest";
 import {
+  findDuplicateSlots,
   findTkbSheet,
   insertLabel,
   labelVariants,
   mapEntries,
   parseTkbSheet,
+  suggestLabels,
   type ClassRef,
   type ParseResult,
   type ParsedTkbEntry,
@@ -377,5 +379,102 @@ describe("excel-parse: real week1_schedule.xls regression", () => {
         subjectsFixture.find((s) => s.code === fixtureEntry.subjectCode)?.component ?? null,
       );
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// suggestLabels — "did you mean…" for failed lookups
+// ---------------------------------------------------------------------------
+
+describe("suggestLabels", () => {
+  const teacherCatalog = [
+    "Nguyễn Thị Bích Hiền",
+    "Nguyễn Thị Hoài Tâm",
+    "Nguyễn Thị Vân",
+    "Trần Anh Khoa",
+    "Lê Thị Vy",
+  ];
+
+  it("suggests the diacritic-free exact match first", () => {
+    expect(suggestLabels("nguyen thi bich hien", teacherCatalog)).toEqual([
+      "Nguyễn Thị Bích Hiền",
+    ]);
+  });
+
+  it("suggests partial-name containment (surname + given name fragment)", () => {
+    const suggestions = suggestLabels("Nguyễn Vân", teacherCatalog);
+    expect(suggestions[0]).toBe("Nguyễn Thị Vân");
+    expect(suggestions.length).toBeGreaterThan(0);
+  });
+
+  it("survives typos via edit-distance similarity", () => {
+    const suggestions = suggestLabels("Toám", ["Toán", "Văn", "Tin học"]);
+    expect(suggestions[0]).toBe("Toán");
+  });
+
+  it("returns nothing when no candidate is recognisable", () => {
+    expect(suggestLabels("xyzzy", teacherCatalog)).toEqual([]);
+    expect(suggestLabels("", teacherCatalog)).toEqual([]);
+    expect(suggestLabels("Toán", undefined)).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// findDuplicateSlots — same class/day/session/period twice in one file
+// ---------------------------------------------------------------------------
+
+describe("findDuplicateSlots", () => {
+  const base = {
+    classId: "cls:6A",
+    dateIso: "2026-09-07",
+    sessionCode: "MORNING" as const,
+    periodNo: 1,
+  };
+
+  it("groups entries that share a class/day/session/period slot", () => {
+    const groups = findDuplicateSlots([
+      { ...base, sourceRow: 10 },
+      { ...base, sourceRow: 14 },
+    ]);
+    expect(groups).toHaveLength(1);
+    expect(groups[0]!.sourceRows).toEqual([10, 14]);
+  });
+
+  it("ignores different periods, classes, sessions and days", () => {
+    expect(
+      findDuplicateSlots([
+        { ...base, sourceRow: 10 },
+        { ...base, periodNo: 2, sourceRow: 11 },
+        { ...base, classId: "cls:6B", sourceRow: 12 },
+        { ...base, sessionCode: "AFTERNOON", sourceRow: 13 },
+        { ...base, dateIso: "2026-09-08", sourceRow: 14 },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("skips entries without a resolved date", () => {
+    expect(
+      findDuplicateSlots([
+        { ...base, dateIso: null, sourceRow: 10 },
+        { ...base, dateIso: null, sourceRow: 11 },
+      ]),
+    ).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// declaredRange — the sheet title's date range surfaced for week matching
+// ---------------------------------------------------------------------------
+
+describe("parseTkbSheet declaredRange", () => {
+  it("exposes the declared title range", () => {
+    const parsed = parseTkbSheet(sheetFromGrid(SYNTHETIC_GRID));
+    expect(parsed.declaredRange).toEqual({ start: "2026-09-07", end: "2026-09-11" });
+  });
+
+  it("is null when the title has no readable range", () => {
+    const noRange = SYNTHETIC_GRID.filter((row) => !String(row[2] ?? "").includes("Áp dụng"));
+    const parsed = parseTkbSheet(sheetFromGrid(noRange));
+    expect(parsed.declaredRange).toBeNull();
   });
 });

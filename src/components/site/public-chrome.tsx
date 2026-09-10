@@ -71,7 +71,11 @@ function LoginButton() {
   );
 }
 
-export async function PublicHeader({ current }: { current?: "tkb" | "hsv" | "login" }) {
+export async function PublicHeader({
+  current,
+}: {
+  current?: "tkb" | "hsv" | "login" | "huong-dan";
+}) {
   const user = await getCurrentUser().catch(() => null);
   const workspace = user ? WORKSPACE_BY_ROLE[user.role] : undefined;
   const staffWorkspace = user && isStaffRole(user.role) ? workspace : undefined;
@@ -105,6 +109,7 @@ export async function PublicHeader({ current }: { current?: "tkb" | "hsv" | "log
         <nav className="ml-auto flex items-center gap-1">
           {navItem("/tkb", "Thời khóa biểu", current === "tkb")}
           <span className="hidden sm:block">{navItem("/hsv", "Sổ tay học sinh", current === "hsv")}</span>
+          <span className="hidden md:block">{navItem("/huong-dan", "Hướng dẫn", current === "huong-dan")}</span>
           {user ? (
             <>
               <UserChip user={user} />

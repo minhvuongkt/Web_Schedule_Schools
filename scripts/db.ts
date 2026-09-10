@@ -124,17 +124,18 @@ function start(): void {
   // Machine quirk: postgres.exe must run with an attached console — when
   // spawned detached (pg_ctl / DETACHED_PROCESS / CREATE_NO_WINDOW), backend
   // children die at spawn (0xC0000142, then shared-memory error 487 on every
-  // connection). Start-Process gives the server its own (minimized) console
-  // and — unlike a direct child_process spawn — the server survives this
-  // script and its parent shell exiting. logging_collector redirects server
-  // logs into <data>/log/ so crashes are diagnosable even after the console
-  // window is gone.
+  // connection). Start-Process with a HIDDEN window gives the server its own
+  // console (DLL init works) without a taskbar window a user can close —
+  // closing the console sends Ctrl+C to postgres children (0xC000013A) and
+  // kills all backends. The server also survives this script exiting.
+  // logging_collector redirects server logs into <data>/log/ so crashes are
+  // diagnosable even without console output.
   const exe = path.join(BIN, "postgres.exe");
   const ps = [
     "Start-Process",
     `-FilePath '${exe.replace(/'/g, "''")}'`,
     `-ArgumentList @('-D','${DATA_DIR.replace(/'/g, "''")}','-p','${PORT}','-c','logging_collector=on','-c','log_min_messages=warning')`,
-    "-WindowStyle Minimized",
+    "-WindowStyle Hidden",
   ].join(" ");
   const child = spawn("powershell.exe", ["-NoProfile", "-Command", ps], {
     stdio: "ignore",

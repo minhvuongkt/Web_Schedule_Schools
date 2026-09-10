@@ -29,6 +29,7 @@ import path from "node:path";
 import * as XLSX from "xlsx";
 import { prisma } from "@/server/db";
 import {
+  findDuplicateSlots,
   findTkbSheet,
   insertLabel,
   isoWeekdayOf,
@@ -256,6 +257,7 @@ async function buildMapContext(db: Db, schoolYearId: string): Promise<MapContext
 
   // Authoritative observed labels first (fixture catalog), then DB-derived
   // labels (names/codes, "Subject(Component)" forms) as fallbacks.
+  const subjectDisplayLabels = new Set<string>();
   const fixture = loadSubjectLabelFixture();
   if (fixture) {
     for (const entry of fixture) {
@@ -274,15 +276,25 @@ async function buildMapContext(db: Db, schoolYearId: string): Promise<MapContext
   for (const subject of subjects) {
     insertLabel(subjectsByLabel, subject.name, { subjectId: subject.id, subjectComponentId: null });
     insertLabel(subjectsByLabel, subject.code, { subjectId: subject.id, subjectComponentId: null });
+    subjectDisplayLabels.add(subject.name);
     for (const component of subject.components) {
       const ref: SubjectRef = { subjectId: subject.id, subjectComponentId: component.id };
       insertLabel(subjectsByLabel, `${subject.name}(${component.code})`, ref);
       insertLabel(subjectsByLabel, `${subject.name}(${component.name})`, ref);
       insertLabel(subjectsByLabel, component.name, ref);
+      subjectDisplayLabels.add(`${subject.name}(${component.name})`);
     }
   }
 
-  return { ctx: { classesByCode, teachersByAlias, subjectsByLabel }, classById, teacherById, subjectById };
+  const teacherDisplayLabels = teachers.map((teacher) => teacher.fullName);
+  const classDisplayLabels = classes.map((klass) => klass.code);
+
+  return {
+    ctx: { classesByCode, teachersByAlias, subjectsByLabel, classDisplayLabels, teacherDisplayLabels, subjectDisplayLabels: [...subjectDisplayLabels] },
+    classById,
+    teacherById,
+    subjectById,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -413,6 +425,30 @@ function engineIssues(result: ReturnType<typeof validateEntries>): ImportIssue[]
   ];
 }
 
+const SESSION_VI: Record<string, string> = { MORNING: "sáng", AFTERNOON: "chiều" };
+
+/** Clear "same slot twice in one file" issues (before generic conflicts). */
+function duplicateSlotIssues(
+  duplicates: ReturnType<typeof findDuplicateSlots>,
+  classById: Map<string, { code: string; name: string | null }>,
+): ImportIssue[] {
+  return duplicates.map((group) => {
+    const code = classById.get(group.classId)?.code ?? group.classId;
+    return {
+      type: "DUPLICATE_SLOT",
+      severity: "ERROR" as const,
+      message: `Lớp ${code}: trùng ô thời khóa biểu (${group.dateIso}, buổi ${SESSION_VI[group.sessionCode] ?? group.sessionCode}, tiết ${group.periodNo}) xuất hiện ${group.sourceRows.length} lần trong tệp — dòng ${group.sourceRows.join(", ")}.`,
+      details: {
+        classCode: code,
+        dateIso: group.dateIso,
+        sessionCode: group.sessionCode,
+        periodNo: group.periodNo,
+        sourceRows: group.sourceRows,
+      },
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Phase 1: preview (NO writes)
 // ---------------------------------------------------------------------------
@@ -438,6 +474,14 @@ export interface ImportPreview {
   weekNo: number;
   weekStart: string;
   weekEnd: string;
+  /** Sheet name in the workbook the entries came from. */
+  sheetName: string;
+  /** Date range declared in the sheet title (null when unreadable). */
+  declaredRange: { start: string; end: string } | null;
+  /** Week whose range contains the declared start (null when none match). */
+  suggestedWeekId: string | null;
+  /** True when the declared range lies fully inside the resolved week. */
+  weekMatch: boolean;
   entries: PreviewEntryDisplay[];
   unmapped: UnmappedTkbEntry[];
   issues: ImportIssue[];
@@ -450,11 +494,12 @@ export async function previewImport(input: {
   weekId?: string;
 }): Promise<{ preview: ImportPreview }> {
   const { week, schoolYearId } = await resolveImportWeek(prisma, input.weekId);
-  const { parsed } = parseWorkbookTkb(input.fileBuffer);
+  const { parsed, sheetName } = parseWorkbookTkb(input.fileBuffer);
   const bundle = await buildMapContext(prisma, schoolYearId);
   const { mapped, unmapped, issues: mapIssues } = mapEntries(parsed, bundle.ctx);
 
   const issues: ImportIssue[] = [...parsed.issues, ...mapIssues];
+  issues.push(...duplicateSlotIssues(findDuplicateSlots(mapped), bundle.classById));
 
   // Dates outside the target week (or unknown because the sheet had no
   // declared range) are reported, not written — commit refuses them.
@@ -494,6 +539,26 @@ export async function previewImport(input: {
   const result = validateEntries(toConflictInputs(inWeek, validation.dayIdByDate, validation.periodIdBySlot), validation.conflict);
   issues.push(...engineIssues(result));
 
+  // Week matching: which week (if any) contains the declared title range?
+  const declaredRange = parsed.declaredRange ?? null;
+  let suggestedWeekId: string | null = null;
+  if (declaredRange) {
+    const yearWeeks = await prisma.week.findMany({
+      where: { semester: { schoolYearId } },
+      select: { id: true, weekNo: true, startDate: true, endDate: true },
+      orderBy: { weekNo: "asc" },
+    });
+    const containing = yearWeeks.find((row) => {
+      const start = dateToIso(row.startDate);
+      const end = dateToIso(row.endDate);
+      return declaredRange.start >= start && declaredRange.end <= end;
+    });
+    suggestedWeekId = containing?.id ?? null;
+  }
+  const weekMatch = declaredRange
+    ? declaredRange.start >= week.weekStart && declaredRange.end <= week.weekEnd
+    : false;
+
   const entries: PreviewEntryDisplay[] = mapped.map((entry) => {
     const klass = bundle.classById.get(entry.classId);
     const subject = bundle.subjectById.get(entry.subjectId);
@@ -524,6 +589,10 @@ export async function previewImport(input: {
       weekNo: week.weekNo,
       weekStart: week.weekStart,
       weekEnd: week.weekEnd,
+      sheetName,
+      declaredRange,
+      suggestedWeekId,
+      weekMatch,
       entries,
       unmapped,
       issues,
@@ -581,6 +650,18 @@ export async function commitImport(input: {
             })),
             issueTypes: [...new Set(mapIssues.map((issue) => issue.type))],
           },
+          422,
+        );
+      }
+
+      const duplicates = findDuplicateSlots(mapped);
+      if (duplicates.length > 0) {
+        const first = duplicates[0]!;
+        const code = bundle.classById.get(first.classId)?.code ?? first.classId;
+        throw new ImportError(
+          "DUPLICATE_SLOT",
+          `Tệp có ${duplicates.length} ô trùng: lớp ${code} (${first.dateIso}, ${SESSION_VI[first.sessionCode] ?? first.sessionCode} tiết ${first.periodNo}) xuất hiện ở dòng ${first.sourceRows.join(", ")} — đã huỷ toàn bộ lần nhập.`,
+          { duplicates: duplicateSlotIssues(duplicates, bundle.classById) },
           422,
         );
       }

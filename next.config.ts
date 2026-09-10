@@ -8,6 +8,10 @@ import type { NextConfig } from "next";
 // NEXT_DIST_DIR=.next or remove this option.
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next-fresh",
+  // Minimal self-contained server (`.next-fresh/standalone/server.js`) for
+  // Docker/VPS deploys: traces only the files needed at runtime, so the
+  // production image does not need a full node_modules install.
+  output: "standalone",
 };
 
 export default nextConfig;

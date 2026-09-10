@@ -1,0 +1,18 @@
+# Everything not needed inside the Docker build context.
+.git
+.gitignore
+.next-fresh
+.next-dead
+.pgdata
+.pgdata-fresh
+.postgres-data
+.pg_pwfile
+node_modules
+npm-debug.log*
+coverage
+*.md
+!docs/api.md
+.env
+.env.*
+*.tsbuildinfo
+.tmp-*

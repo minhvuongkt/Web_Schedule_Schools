@@ -695,6 +695,11 @@ export default async function LandingPage() {
                   Thông báo lớp học
                 </Link>
               </li>
+              <li>
+                <Link href="/huong-dan" className="transition hover:text-white">
+                  Hướng dẫn sử dụng
+                </Link>
+              </li>
             </ul>
           </div>
           <div>

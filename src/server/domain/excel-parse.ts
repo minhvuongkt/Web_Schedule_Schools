@@ -49,6 +49,8 @@ export interface ImportIssue {
 export interface ParseResult {
   entries: ParsedTkbEntry[];
   issues: ImportIssue[];
+  /** Date range declared in the sheet title, when readable. */
+  declaredRange?: { start: string; end: string } | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -78,6 +80,11 @@ export interface TkbMapContext {
   teachersByAlias: Map<string, TeacherRef>;
   /** keyed by subject labels (use insertLabel). */
   subjectsByLabel: Map<string, SubjectRef>;
+  /** Human-readable labels used for "did you mean…" suggestions on lookup
+   *  failures (real catalog names, not the lookup variants). */
+  classDisplayLabels?: string[];
+  teacherDisplayLabels?: string[];
+  subjectDisplayLabels?: string[];
 }
 
 /**
@@ -107,6 +114,104 @@ function lookupLabel<T>(map: Map<string, T>, label: string): T | undefined {
     if (hit !== undefined) return hit;
   }
   return undefined;
+}
+
+// ---------------------------------------------------------------------------
+// "Did you mean…?" suggestions for failed lookups
+// ---------------------------------------------------------------------------
+
+/** Levenshtein distance (small strings only — catalog labels are short). */
+function editDistance(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  for (let i = 1; i <= m; i++) {
+    const curr = [i];
+    for (let j = 1; j <= n; j++) {
+      curr[j] = Math.min(
+        prev[j]! + 1,
+        curr[j - 1]! + 1,
+        prev[j - 1]! + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = curr;
+  }
+  return prev[n]!;
+}
+
+/**
+ * Similarity score 0–100 between an unknown Excel label and a catalog label:
+ * diacritic-free containment (partial names like "Nguyễn Vân" → "Nguyễn Thị
+ * Vân") beats token overlap ("nguyen thi" → shared 2/3 tokens) beats edit
+ * distance (typos like "Toám" → "Toán"). Returns 0 for nothing recognisable.
+ */
+function labelSimilarity(unknown: string, candidate: string): number {
+  const u = diacriticFreeKey(unknown);
+  const c = diacriticFreeKey(candidate);
+  if (u === "" || c === "") return 0;
+  if (u === c) return 100;
+  if (c.includes(u) || u.includes(c)) return 90;
+  const uTokens = new Set(u.split(/\s+/));
+  const cTokens = c.split(/\s+/);
+  const shared = cTokens.filter((token) => uTokens.has(token)).length;
+  const overlap = shared / Math.max(uTokens.size, cTokens.length);
+  const editSim = 1 - editDistance(u, c) / Math.max(u.length, c.length);
+  return Math.max(overlap * 85, editSim * 80);
+}
+
+/** Up to `limit` closest catalog labels for a failed lookup (score ≥ 50). */
+export function suggestLabels(
+  unknown: string,
+  candidates: readonly string[] | undefined,
+  limit = 3,
+): string[] {
+  if (!candidates || candidates.length === 0 || unknown.trim() === "") return [];
+  const seen = new Set<string>();
+  const scored: { label: string; score: number }[] = [];
+  for (const candidate of candidates) {
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
+    const score = labelSimilarity(unknown, candidate);
+    if (score >= 50) scored.push({ label: candidate, score });
+  }
+  scored.sort((a, b) => b.score - a.score || a.label.localeCompare(b.label));
+  return scored.slice(0, limit).map((s) => s.label);
+}
+
+// ---------------------------------------------------------------------------
+// Duplicate-slot detection (same class/day/session/period twice in one file)
+// ---------------------------------------------------------------------------
+
+export interface DuplicateSlotGroup {
+  classId: string;
+  dateIso: string;
+  sessionCode: SessionCode;
+  periodNo: number;
+  sourceRows: number[];
+}
+
+/** Groups mapped entries that land on the same class+day+session+period. */
+export function findDuplicateSlots(
+  mapped: readonly { classId: string; dateIso: string | null; sessionCode: SessionCode; periodNo: number; sourceRow: number }[],
+): DuplicateSlotGroup[] {
+  const bySlot = new Map<string, DuplicateSlotGroup>();
+  for (const entry of mapped) {
+    if (entry.dateIso === null) continue;
+    const key = `${entry.classId}#${entry.dateIso}#${entry.sessionCode}#${entry.periodNo}`;
+    const group = bySlot.get(key);
+    if (group) group.sourceRows.push(entry.sourceRow);
+    else
+      bySlot.set(key, {
+        classId: entry.classId,
+        dateIso: entry.dateIso,
+        sessionCode: entry.sessionCode,
+        periodNo: entry.periodNo,
+        sourceRows: [entry.sourceRow],
+      });
+  }
+  return [...bySlot.values()].filter((group) => group.sourceRows.length > 1);
 }
 
 // ---------------------------------------------------------------------------
@@ -207,6 +312,8 @@ export function parseTkbSheet(sheet: XLSX.WorkSheet): ParseResult {
         "Không đọc được khoảng ngày áp dụng từ tiêu đề trang tính — không thể suy ra ngày học của các tiết.",
     });
   }
+  const declaredRange =
+    declaredStart && declaredEnd ? { start: declaredStart, end: declaredEnd } : null;
 
   // Class header row: the row with the most "Lớp <code>" cells.
   let headerRowIndex = -1;
@@ -230,7 +337,7 @@ export function parseTkbSheet(sheet: XLSX.WorkSheet): ParseResult {
       severity: "ERROR",
       message: "Không tìm thấy dòng tiêu đề cột lớp ('Lớp 6A', …) trong trang tính.",
     });
-    return { entries: [], issues };
+    return { entries: [], issues, declaredRange };
   }
 
   // Documented LABEL_TYPO: the GV sub-header says "GV thực hiên".
@@ -396,12 +503,8 @@ export function parseTkbSheet(sheet: XLSX.WorkSheet): ParseResult {
     }
   }
 
-  return { entries, issues };
+  return { entries, issues, declaredRange };
 }
-
-// ---------------------------------------------------------------------------
-// mapEntries
-// ---------------------------------------------------------------------------
 
 export interface MappedTkbEntry {
   classId: string;
@@ -418,6 +521,14 @@ export interface MappedTkbEntry {
 export interface UnmappedTkbEntry {
   entry: ParsedTkbEntry;
   reasons: string[]; // UNKNOWN_CLASS | UNKNOWN_SUBJECT | UNKNOWN_TEACHER | MISSING_TEACHER
+  /** Closest catalog labels ("did you mean…"), per failed field:
+   *  class → suggested classes, subject → suggested subjects,
+   *  teacher → suggested teachers (empty when no plausible candidate). */
+  suggestions?: {
+    classLabels: string[];
+    subjectLabels: string[];
+    teacherLabels: string[];
+  };
 }
 
 export interface MapResult {
@@ -484,7 +595,21 @@ export function mapEntries(parsed: ParseResult, ctx: TkbMapContext): MapResult {
     }
 
     if (reasons.length > 0 || !klass || !subject || !teacher) {
-      unmapped.push({ entry, reasons });
+      unmapped.push({
+        entry,
+        reasons,
+        suggestions: {
+          classLabels: reasons.includes("UNKNOWN_CLASS")
+            ? suggestLabels(entry.classCode, ctx.classDisplayLabels)
+            : [],
+          subjectLabels: reasons.includes("UNKNOWN_SUBJECT")
+            ? suggestLabels(entry.subjectLabel, ctx.subjectDisplayLabels)
+            : [],
+          teacherLabels: reasons.includes("UNKNOWN_TEACHER")
+            ? suggestLabels(entry.teacherAlias, ctx.teacherDisplayLabels)
+            : [],
+        },
+      });
       continue;
     }
 

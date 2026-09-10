@@ -66,6 +66,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { href: "/gv", label: "Lịch dạy của tôi", icon: "user", teacherOnly: true },
       { href: "/gv/thong-bao", label: "Thông báo", icon: "bell", teacherOnly: true },
       { href: "/tkb", label: "Xem thời khóa biểu", icon: "external-link" },
+      { href: "/huong-dan", label: "Hướng dẫn sử dụng", icon: "sparkles" },
     ],
   },
 ];

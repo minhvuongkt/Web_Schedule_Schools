@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { StudentTodayView } from "@/server/services/student-view.service";
 import { ClassPicker, studentClassStorage } from "@/components/student/class-picker";
+import { StudentDayPeriods } from "@/components/student/student-day-periods";
 
 interface Props {
   classes: { code: string; grade: number }[];
@@ -23,13 +24,6 @@ const VI_DAY: Record<number, string> = {
   5: "Thứ 6",
   6: "Thứ 7",
   7: "Chủ nhật",
-};
-
-const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
-  SUBSTITUTED: { label: "Đổi GV", cls: "bg-amber-100 text-amber-900" },
-  CANCELLED: { label: "Đã hủy", cls: "bg-zinc-200 text-zinc-600" },
-  MAKEUP: { label: "Dạy bù", cls: "bg-blue-100 text-blue-800" },
-  MOVED: { label: "Đã dời", cls: "bg-zinc-100 text-zinc-600" },
 };
 
 export function StudentWeekClient({ classes, initialClass, view }: Props) {
@@ -100,47 +94,7 @@ export function StudentWeekClient({ classes, initialClass, view }: Props) {
           </ul>
 
           {day ? (
-            <ul className="space-y-1.5">
-              {day.periods.map((p) => {
-                const badge = p.lesson ? STATUS_BADGE[p.lesson.status] : undefined;
-                return (
-                  <li
-                    key={`${p.sessionLabelVi}-${p.orderNo}`}
-                    className={`flex items-baseline gap-3 rounded-lg border px-3 py-2.5 ${
-                      p.lesson?.status === "CANCELLED"
-                        ? "border-zinc-100 bg-zinc-50 opacity-60"
-                        : "border-zinc-200 bg-white"
-                    }`}
-                  >
-                    <span className="w-16 shrink-0 text-xs tabular-nums text-zinc-500">
-                      Tiết {p.orderNo}
-                      <span className="block">{p.startTime}</span>
-                    </span>
-                    {p.lesson ? (
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium text-zinc-900">
-                          {p.lesson.subjectName}
-                          {p.lesson.componentName ? ` (${p.lesson.componentName})` : ""}
-                          {badge ? (
-                            <span
-                              className={`ml-2 rounded-full px-2 py-0.5 text-[10px] font-medium ${badge.cls}`}
-                            >
-                              {badge.label}
-                            </span>
-                          ) : null}
-                        </span>
-                        <span className="block text-xs text-zinc-500">
-                          {p.lesson.teacherName}
-                          {p.lesson.roomCode ? ` · Phòng ${p.lesson.roomCode}` : ""}
-                        </span>
-                      </span>
-                    ) : (
-                      <span className="text-sm text-zinc-400">—</span>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+            <StudentDayPeriods periods={day.periods} />
           ) : null}
         </>
       ) : (

@@ -27,9 +27,12 @@
     transform: translateY(14px);
   }
   /* `none` (not translateY(0)): with fill-mode both the final value is
-     retained, and a retained transform would make this wrapper a containing
-     block for position:fixed descendants — breaking fixed overlays (modals,
-     toasts) whenever the page is scrolled. */
+     retained. NOTE: in Chromium even `none` does not fully help — a filled
+     transform animation keeps the element a containing block for fixed
+     descendants (computed transform stays an identity matrix). Therefore
+     fade-up is ONLY safe on elements that are never ancestors of
+     fixed/sticky overlays (cards, hero blocks, and the overlays
+     themselves). Page-level wrappers must use fade-in (opacity only). */
   to {
     opacity: 1;
     transform: none;
