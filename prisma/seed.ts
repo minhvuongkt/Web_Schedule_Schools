@@ -20,7 +20,10 @@
  */
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../src/generated/prisma/client";
+// Generated client: src/generated/prisma-fresh is the committed generator
+// output (the original src/generated/prisma dir is dead-SID-locked on one
+// dev machine and not in git — see AGENTS.md).
+import { PrismaClient } from "../src/generated/prisma-fresh/client";
 import { normalizeName } from "../src/server/domain/normalize";
 import { hashPassword } from "../src/server/domain/password";
 
