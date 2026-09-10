@@ -61,3 +61,5 @@ next-env.d.ts
 # The verified Week-01 source workbook is a repo fixture (tests + reference
 # import) — see database/fixtures/week1/README.md.
 !database/fixtures/week1/source/*.xls
+# Report deliverables (results report ships in editable Word form too).
+!report/*.docx
