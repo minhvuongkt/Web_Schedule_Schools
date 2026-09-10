@@ -211,6 +211,7 @@ const ENTRY_SELECT = {
   subjectId: true,
   subjectComponentId: true,
   roomId: true,
+  notes: true,
   status: true,
 } as const;
 
@@ -509,6 +510,220 @@ export async function deleteEntry(
     );
     return { revision };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Batch copy (copy day / copy class schedule / repeated lesson paste)
+// ---------------------------------------------------------------------------
+
+export type CopyMode = "copy-day" | "copy-class" | "copy-entry";
+
+export interface CopyItemInput {
+  /** Source entry (must belong to the same DRAFT version). */
+  entryId: string;
+  academicDayId: string;
+  periodId: string;
+  classId: string;
+}
+
+export interface CopyEntriesInput {
+  versionId: string;
+  items: CopyItemInput[];
+  expectedRevision: number;
+  mode: CopyMode;
+}
+
+export interface CopySkipped {
+  entryId: string;
+  code: "CLASS_DOUBLE_BOOKED" | "TEACHER_DOUBLE_BOOKED" | "ROOM_DOUBLE_BOOKED" | "ENTRY_NOT_FOUND";
+  message: string;
+}
+
+export interface CopyEntriesResult {
+  /** Ids of the newly created entries (undo support). */
+  createdIds: string[];
+  skipped: CopySkipped[];
+  revision: number;
+}
+
+/**
+ * Copies entries to new cells within the same DRAFT version (the sources
+ * stay where they are). Best-effort semantics — the planner's batch tools
+ * (copy day, copy class, multi-paste) must not strand a whole day because
+ * one cell is busy: items that would hard-conflict are skipped and
+ * reported, everything valid is created in ONE transaction with one
+ * revision bump and one audit row.
+ */
+export async function copyEntries(
+  input: CopyEntriesInput,
+  actor: SessionUser,
+): Promise<CopyEntriesResult> {
+  assertCanWrite(actor);
+  if (input.items.length === 0) {
+    throw new MutationError("VALIDATION_ERROR", "Danh sách tiết cần sao chép đang trống.", {}, 400);
+  }
+  const version = await beginVersionedMutation(input.versionId, input.expectedRevision);
+
+  // Source entries: re-read from the DB — never trust client payloads.
+  const sourceIds = [...new Set(input.items.map((item) => item.entryId))];
+  const sources = await prisma.timetableEntry.findMany({
+    where: { id: { in: sourceIds }, versionId: input.versionId },
+    select: ENTRY_SELECT,
+  });
+  const sourceById = new Map(sources.map((entry) => [entry.id, entry]));
+
+  // Current occupancy for conflict checks (class slot / teacher slot / room slot).
+  const existing = await prisma.timetableEntry.findMany({
+    where: { versionId: input.versionId },
+    select: ENTRY_SELECT,
+  });
+  const classSlot = new Set<string>();
+  const teacherSlot = new Set<string>();
+  const roomSlot = new Set<string>();
+  for (const entry of existing) {
+    classSlot.add(`${entry.academicDayId}|${entry.periodId}|${entry.classId}`);
+    if (entry.teacherId) {
+      teacherSlot.add(`${entry.academicDayId}|${entry.periodId}|${entry.teacherId}`);
+    }
+    if (entry.roomId) {
+      roomSlot.add(`${entry.academicDayId}|${entry.periodId}|${entry.roomId}`);
+    }
+  }
+
+  const skipped: CopySkipped[] = [];
+  type Planned = {
+    entryId: string;
+    academicDayId: string;
+    periodId: string;
+    classId: string;
+    sourceId: string;
+  };
+  const planned: Planned[] = [];
+
+  for (const item of input.items) {
+    const source = sourceById.get(item.entryId);
+    if (!source) {
+      skipped.push({
+        entryId: item.entryId,
+        code: "ENTRY_NOT_FOUND",
+        message: "Tiết gốc không tồn tại trong phiên bản này.",
+      });
+      continue;
+    }
+    // Same cell = occupied by definition; sources are never consumed.
+    if (source.academicDayId === item.academicDayId
+      && source.periodId === item.periodId
+      && source.classId === item.classId) {
+      skipped.push({
+        entryId: item.entryId,
+        code: "CLASS_DOUBLE_BOOKED",
+        message: "Ô đích đã có tiết học này.",
+      });
+      continue;
+    }
+    const classKey = `${item.academicDayId}|${item.periodId}|${item.classId}`;
+    if (classSlot.has(classKey)) {
+      skipped.push({
+        entryId: item.entryId,
+        code: "CLASS_DOUBLE_BOOKED",
+        message: "Ô đích của lớp đã có tiết học khác.",
+      });
+      continue;
+    }
+    if (source.teacherId && teacherSlot.has(`${item.academicDayId}|${item.periodId}|${source.teacherId}`)) {
+      skipped.push({
+        entryId: item.entryId,
+        code: "TEACHER_DOUBLE_BOOKED",
+        message: "Giáo viên đã bận ở tiết đích.",
+      });
+      continue;
+    }
+    if (source.roomId && roomSlot.has(`${item.academicDayId}|${item.periodId}|${source.roomId}`)) {
+      skipped.push({
+        entryId: item.entryId,
+        code: "ROOM_DOUBLE_BOOKED",
+        message: "Phòng học đã được dùng ở tiết đích.",
+      });
+      continue;
+    }
+
+    // Reserve the slots so intra-batch duplicates skip too.
+    classSlot.add(classKey);
+    if (source.teacherId) {
+      teacherSlot.add(`${item.academicDayId}|${item.periodId}|${source.teacherId}`);
+    }
+    if (source.roomId) {
+      roomSlot.add(`${item.academicDayId}|${item.periodId}|${source.roomId}`);
+    }
+    planned.push({
+      entryId: item.entryId,
+      academicDayId: item.academicDayId,
+      periodId: item.periodId,
+      classId: item.classId,
+      sourceId: source.id,
+    });
+  }
+
+  if (planned.length === 0) {
+    return { createdIds: [], skipped, revision: version.revision };
+  }
+
+  const createdIds = await prisma.$transaction(async (tx) => {
+    const fresh = await tx.timetableVersion.findUnique({
+      where: { id: version.id },
+      select: { revision: true, status: true },
+    });
+    if (!fresh || fresh.revision !== version.revision || fresh.status !== "DRAFT") {
+      throw new MutationError("VERSION_OUTDATED", "Phiên bản đã thay đổi. Vui lòng tải lại.", { versionId: version.id }, 409);
+    }
+    const ids: string[] = [];
+    try {
+      for (const item of planned) {
+        const source = sourceById.get(item.sourceId);
+        if (!source) continue;
+        const entry = await tx.timetableEntry.create({
+          data: {
+            versionId: input.versionId,
+            academicDayId: item.academicDayId,
+            periodId: item.periodId,
+            classId: item.classId,
+            subjectId: source.subjectId,
+            subjectComponentId: source.subjectComponentId,
+            teacherId: source.teacherId,
+            roomId: source.roomId,
+            notes: source.notes,
+            status: "NORMAL",
+          },
+          select: { id: true },
+        });
+        ids.push(entry.id);
+      }
+    } catch (error) {
+      throw mapUniqueViolation(error, "Tiết học bị trùng lịch tại cùng thời điểm.");
+    }
+    await auditAndBump(
+      tx,
+      version,
+      actor,
+      "CREATE",
+      "TimetableEntry",
+      null,
+      {
+        mode: input.mode,
+        copiedCount: ids.length,
+        sources: planned.map((item) => item.sourceId),
+        targets: planned.map((item) => ({
+          academicDayId: item.academicDayId,
+          periodId: item.periodId,
+          classId: item.classId,
+        })),
+      },
+      `batch copy (${input.mode})`,
+    );
+    return ids;
+  });
+
+  return { createdIds, skipped, revision: version.revision + 1 };
 }
 
 // ---------------------------------------------------------------------------

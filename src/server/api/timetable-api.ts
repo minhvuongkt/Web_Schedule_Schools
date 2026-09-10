@@ -3,6 +3,7 @@ import { z } from "zod";
 import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { getCurrentUser, type SessionUser } from "@/server/auth/session";
 import {
+  copyEntries,
   createEntry,
   createVersion,
   deleteEntry,
@@ -383,6 +384,46 @@ export async function handleDeleteEntry(id: string, request: Request): Promise<N
   try {
     const { revision: newRevision } = await deleteEntry(id, revision, auth.user);
     return NextResponse.json({ ok: true, revision: newRevision });
+  } catch (error) {
+    return mutationErrorResponse(error) ?? throwInternal(error);
+  }
+}
+
+// --- POST /api/timetable/entries/copy (batch copy day/class/entry) ---------
+
+const copyItemsSchema = z
+  .array(
+    z.object({
+      entryId: z.string().min(1),
+      academicDayId: z.string().min(1),
+      periodId: z.string().min(1),
+      classId: z.string().min(1),
+    }),
+  )
+  .min(1)
+  .max(200);
+
+const copySchema = z.object({
+  versionId: z.string().min(1),
+  items: copyItemsSchema,
+  expectedRevision: z.number().int().nonnegative(),
+  mode: z.enum(["copy-day", "copy-class", "copy-entry"]),
+});
+
+export async function handleCopyEntries(request: Request): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse(400, "INVALID_JSON", "Thân yêu cầu không phải JSON hợp lệ.");
+  }
+  const parsed = copySchema.safeParse(body);
+  if (!parsed.success) return zodErrorResponse(parsed.error.issues);
+  try {
+    const result = await copyEntries(parsed.data, auth.user);
+    return NextResponse.json(result);
   } catch (error) {
     return mutationErrorResponse(error) ?? throwInternal(error);
   }

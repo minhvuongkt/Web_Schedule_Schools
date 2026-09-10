@@ -207,4 +207,20 @@ export const api = {
       `/api/timetable/entries/${id}?expectedRevision=${expectedRevision}`,
       { method: "DELETE" },
     ),
+  copyEntries: (
+    body: {
+      versionId: string;
+      items: { entryId: string; academicDayId: string; periodId: string; classId: string }[];
+      expectedRevision: number;
+      mode: "copy-day" | "copy-class" | "copy-entry";
+    },
+  ) =>
+    request<{
+      createdIds: string[];
+      skipped: { entryId: string; code: string; message: string }[];
+      revision: number;
+    }>("/api/timetable/entries/copy", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
 };

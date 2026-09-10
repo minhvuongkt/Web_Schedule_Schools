@@ -1,0 +1,1 @@
+F:/Coding/Web_Schedule_School/node_modules/@embedded-postgres/windows-x64/native/bin/postgres.exe "-D" "F:\Coding\Web_Schedule_School\.pgdata-fresh" "-p" "5435"

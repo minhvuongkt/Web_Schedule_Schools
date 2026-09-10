@@ -12,10 +12,11 @@
  *   PG_PORT (5433), PG_USER (postgres), PG_PASSWORD (postgres),
  *   PG_DATABASE (school_timetable), PG_DATA_DIR (.postgres-data)
  */
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { Client } from "pg";
+import "dotenv/config";
 
 const ROOT = process.cwd();
 const DATA_DIR = path.resolve(ROOT, process.env.PG_DATA_DIR ?? ".pgdata");
@@ -118,16 +119,49 @@ function start(): void {
   ]);
   if (status === 0) {
     console.log("PostgreSQL is already running");
-  } else {
-    ctl([
-      "-D",
-      DATA_DIR,
-      "-l",
-      path.join(DATA_DIR, "logfile"),
-      "-o",
-      `-p ${PORT}`,
-      "start",
-    ]);
+    return;
+  }
+  // Machine quirk: postgres.exe must run with an attached console — when
+  // spawned detached (pg_ctl / DETACHED_PROCESS / CREATE_NO_WINDOW), backend
+  // children die at spawn (0xC0000142, then shared-memory error 487 on every
+  // connection). `cmd start` gives the server its own minimized console,
+  // which also keeps it running after this script exits.
+  const exe = path.join(BIN, "postgres.exe");
+  const cmdline = `/c start "PostgreSQL (embedded dev)" /min "${exe}" -D "${DATA_DIR}" -p ${PORT}`;
+  const child = spawn(
+    process.env.ComSpec ?? "cmd.exe",
+    [cmdline],
+    {
+      windowsVerbatimArguments: true,
+      stdio: "ignore",
+      detached: true,
+    },
+  );
+  child.unref();
+}
+
+async function waitForReadiness(): Promise<void> {
+  const deadline = Date.now() + 30_000;
+  for (;;) {
+    const client = new Client({
+      host: "localhost",
+      port: PORT,
+      user: USER,
+      password: PASSWORD,
+      database: "postgres",
+      connectionTimeoutMillis: 1000,
+    });
+    try {
+      await client.connect();
+      await client.end();
+      return;
+    } catch {
+      try { await client.end(); } catch {}
+      if (Date.now() > deadline) {
+        throw new Error(`PostgreSQL did not become ready within 30s on port ${PORT}`);
+      }
+      await new Promise((r) => setTimeout(r, 500));
+    }
   }
 }
 
@@ -136,12 +170,13 @@ async function main(): Promise<void> {
   switch (command) {
     case "start":
       start();
+      await waitForReadiness();
       await ensureDatabase();
       console.log(`PostgreSQL ready: localhost:${PORT}/${DATABASE}`);
       break;
     case "stop":
       ctl(["-D", DATA_DIR, "stop", "-m", "fast"]);
-      console.log("PostgreSQL stopped (data kept in .postgres-data)");
+      console.log(`PostgreSQL stopped (data kept in ${DATA_DIR})`);
       break;
     case "status":
       process.exit(ctl(["-D", DATA_DIR, "status"]));

@@ -17,6 +17,7 @@ import {
 import { EntryPanel } from "./entry-panel";
 import { IssuesPanel } from "./issues-panel";
 import { WorkloadBadge } from "./workload-badge";
+import { CopyClassDialog, CopyDayDialog } from "./copy-dialogs";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Icon } from "@/components/ui/icon";
 import { Portal } from "@/components/ui/portal";
@@ -78,6 +79,13 @@ export function PlannerApp({ user }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  /** Lesson clipboard: picked-up entry pasteable into any empty cell. */
+  const [copiedEntry, setCopiedEntry] = useState<GridEntry | null>(null);
+  const [copyDayOpen, setCopyDayOpen] = useState(false);
+  const [copyClassOpen, setCopyClassOpen] = useState(false);
+  /** DnD visuals: id of the entry being dragged + hovered cell key. */
+  const [dragEntryId, setDragEntryId] = useState<string | null>(null);
+  const [dropCellKey, setDropCellKey] = useState<string | null>(null);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [report, setReport] = useState<ValidateReport | null>(null);
   const [busy, setBusy] = useState(false);
@@ -86,6 +94,19 @@ export function PlannerApp({ user }: Props) {
   const [highlightEntryId, setHighlightEntryId] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
   const toastSeq = useRef(0);
+  /**
+   * Live revision of the loaded version. Undo closures MUST read the
+   * revision at execution time — capturing `grid.version.revision` at
+   * push-time is always stale by one bump (the mutation itself increments
+   * it), so undo would fail with VERSION_OUTDATED.
+   */
+  const revisionRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (grid?.version.revision !== undefined) {
+      revisionRef.current = grid.version.revision;
+    }
+  }, [grid]);
 
   const sheetOpen = Boolean(selectedEntry || targetCell || report);
   // ≥xl the panel is an inline sticky rail, not a modal: locking body scroll
@@ -124,21 +145,23 @@ export function PlannerApp({ user }: Props) {
     return () => window.clearTimeout(t);
   }, [error]);
 
-  /** Esc closes the entry sheet / action sheet (mirrors ConfirmDialog). */
+  /** Esc closes the entry sheet / action sheet / copy clipboard (mirrors ConfirmDialog). */
   useEffect(() => {
-    if (!sheetOpen && !actionsOpen) return;
+    if (!sheetOpen && !actionsOpen && !copiedEntry) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
       if (actionsOpen) setActionsOpen(false);
-      else {
+      else if (sheetOpen) {
         setSelectedEntry(null);
         setTargetCell(null);
         setReport(null);
+      } else {
+        setCopiedEntry(null);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sheetOpen, actionsOpen]);
+  }, [sheetOpen, actionsOpen, copiedEntry]);
 
   const loadVersions = useCallback(async (wid: string) => {
     const data = await api.versions(wid);
@@ -216,6 +239,7 @@ export function PlannerApp({ user }: Props) {
     const action = undoStack.current.pop();
     setUndoCount(undoStack.current.length);
     if (!action) return;
+    setBusy(true);
     try {
       await action.undo();
       await refresh();
@@ -223,6 +247,8 @@ export function PlannerApp({ user }: Props) {
     } catch (e) {
       setError(`Hoàn tác thất bại: ${e instanceof Error ? e.message : "lỗi"}`);
       await refresh();
+    } finally {
+      setBusy(false);
     }
   }, [refresh, flashNotice]);
 
@@ -269,7 +295,7 @@ export function PlannerApp({ user }: Props) {
             teacherId: entry.teacherId,
             roomId: entry.roomId,
             notes: entry.notes,
-            expectedRevision: grid?.version.revision ?? version.revision,
+            expectedRevision: revisionRef.current,
           });
         },
       });
@@ -297,7 +323,7 @@ export function PlannerApp({ user }: Props) {
           await api.updateEntry(entry.id, {
             academicDayId: entry.academicDayId,
             periodId: entry.periodId,
-            expectedRevision: grid?.version.revision ?? version.revision,
+            expectedRevision: revisionRef.current,
           });
         },
       });
@@ -329,7 +355,7 @@ export function PlannerApp({ user }: Props) {
             teacherId: entry.teacherId,
             roomId: entry.roomId,
             notes: entry.notes,
-            expectedRevision: grid?.version.revision ?? version.revision,
+            expectedRevision: revisionRef.current,
           });
         },
       });
@@ -360,6 +386,96 @@ export function PlannerApp({ user }: Props) {
     } else {
       setError(fallback);
     }
+  };
+
+  /**
+   * Shared batch-copy runner (paste / copy day / copy class). Best-effort:
+   * the server skips cells that would double-book and reports them; the
+   * toast tells the planner exactly how many landed. Undo deletes the
+   * created rows, chaining each response's fresh revision.
+   */
+  const runCopy = async (
+    mode: "copy-day" | "copy-class" | "copy-entry",
+    items: { entryId: string; academicDayId: string; periodId: string; classId: string }[],
+    label: string,
+  ) => {
+    if (!version || !editable) return;
+    setBusy(true);
+    try {
+      const result = await api.copyEntries({
+        versionId: version.id,
+        items,
+        expectedRevision: revisionRef.current,
+        mode,
+      });
+      if (result.createdIds.length > 0) {
+        pushUndo({
+          label,
+          undo: async () => {
+            let rev = revisionRef.current;
+            for (const id of result.createdIds) {
+              const res = await api.deleteEntry(id, rev);
+              rev = res.revision;
+            }
+          },
+        });
+      }
+      await refresh();
+      const skipNote =
+        result.skipped.length > 0
+          ? ` · bỏ qua ${result.skipped.length} tiết trùng lịch`
+          : "";
+      flashNotice(`Đã sao chép ${result.createdIds.length} tiết${skipNote}.`);
+    } catch (e) {
+      handleError(e, "Sao chép thất bại.");
+      await refresh().catch(() => undefined);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** Paste the clipboard entry into an empty cell of the viewed class. */
+  const handlePaste = (dayId: string, periodId: string) => {
+    if (!copiedEntry) return;
+    void runCopy(
+      "copy-entry",
+      [{ entryId: copiedEntry.id, academicDayId: dayId, periodId, classId }],
+      "Dán tiết học",
+    );
+  };
+
+  const handleCopyDay = async (sourceDayId: string, targetDayId: string) => {
+    setCopyDayOpen(false);
+    const items = (grid?.entries ?? [])
+      .filter((e) => e.classId === classId && e.academicDayId === sourceDayId)
+      .map((e) => ({
+        entryId: e.id,
+        academicDayId: targetDayId,
+        periodId: e.periodId,
+        classId: e.classId,
+      }));
+    if (items.length === 0) {
+      setError("Ngày nguồn không có tiết học nào của lớp này.");
+      return;
+    }
+    await runCopy("copy-day", items, "Sao chép ngày");
+  };
+
+  const handleCopyClass = async (sourceClassId: string, targetClassId: string) => {
+    setCopyClassOpen(false);
+    const items = (grid?.entries ?? [])
+      .filter((e) => e.classId === sourceClassId)
+      .map((e) => ({
+        entryId: e.id,
+        academicDayId: e.academicDayId,
+        periodId: e.periodId,
+        classId: targetClassId,
+      }));
+    if (items.length === 0) {
+      setError("Lớp nguồn không có tiết học nào để sao chép.");
+      return;
+    }
+    await runCopy("copy-class", items, "Sao chép lịch lớp");
   };
 
   const handleWorkflow = async (
@@ -472,6 +588,25 @@ export function PlannerApp({ user }: Props) {
     return map;
   }, [grid, classId]);
 
+  /** Entries of the viewed class per school day (copy-day preview). */
+  const entryCountByDay = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const entry of grid?.entries ?? []) {
+      if (entry.classId !== classId) continue;
+      map.set(entry.academicDayId, (map.get(entry.academicDayId) ?? 0) + 1);
+    }
+    return map;
+  }, [grid, classId]);
+
+  /** Entries per class across the whole version (copy-class preview). */
+  const entryCountByClass = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const entry of grid?.entries ?? []) {
+      map.set(entry.classId, (map.get(entry.classId) ?? 0) + 1);
+    }
+    return map;
+  }, [grid]);
+
   const schoolDays = useMemo(
     () => (grid?.days ?? []).filter((d) => d.isSchoolDay),
     [grid],
@@ -518,6 +653,7 @@ export function PlannerApp({ user }: Props) {
                   setReport(null);
                   undoStack.current = [];
                   setUndoCount(0);
+                  setCopiedEntry(null);
                   loadVersions(e.target.value).then((vs) => {
                     if (vs.length > 0) setVersionId(vs[0].id);
                   });
@@ -535,7 +671,14 @@ export function PlannerApp({ user }: Props) {
                 label="Chọn phiên bản"
                 className="min-w-0"
                 value={versionId}
-                onChange={(e) => setVersionId(e.target.value)}
+                onChange={(e) => {
+                  setVersionId(e.target.value);
+                  // Undo actions and the clipboard reference entries of the
+                  // previous version — both are void after switching.
+                  undoStack.current = [];
+                  setUndoCount(0);
+                  setCopiedEntry(null);
+                }}
               >
                 {versions.map((v) => (
                   <option key={v.id} value={v.id}>
@@ -577,6 +720,28 @@ export function PlannerApp({ user }: Props) {
               >
                 Kiểm tra
               </button>
+              {editable && canWrite && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setCopyDayOpen(true)}
+                    disabled={busy || !classId || !grid}
+                    title="Sao chép toàn bộ ngày của lớp này sang một ngày khác"
+                    className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                  >
+                    Chép ngày
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCopyClassOpen(true)}
+                    disabled={busy || !grid}
+                    title="Sao chép toàn bộ thời khóa biểu của một lớp sang lớp khác"
+                    className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-500 disabled:opacity-50"
+                  >
+                    Chép lịch lớp
+                  </button>
+                </>
+              )}
               {version?.status === "DRAFT" && canWrite && (
                 <button
                   type="button"
@@ -697,6 +862,34 @@ export function PlannerApp({ user }: Props) {
             </div>
           )}
 
+          {/* clipboard hint: paste-ready state */}
+          {copiedEntry && (
+            <div className="no-print mb-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-800">
+              <Icon name="copy" size={14} />
+              <span>
+                Đã sao chép tiết{" "}
+                <strong>
+                  {subjectById.get(copiedEntry.subjectId)?.name ?? "?"}
+                  {copiedEntry.subjectComponentId
+                    ? ` (${
+                        subjectById
+                          .get(copiedEntry.subjectId)
+                          ?.components.find((c) => c.id === copiedEntry.subjectComponentId)?.name ?? "?"
+                      })`
+                    : ""}
+                </strong>{" "}
+                — bấm vào ô trống để dán (dán được nhiều lần, giữ Ctrl khi kéo-thả để sao chép)
+              </span>
+              <button
+                type="button"
+                onClick={() => setCopiedEntry(null)}
+                className="ml-auto rounded-md border border-emerald-300 bg-white px-2 py-1 font-medium text-emerald-800 transition-colors hover:border-emerald-500"
+              >
+                Bỏ sao chép (Esc)
+              </button>
+            </div>
+          )}
+
           <div className="overflow-x-auto [&_table]:min-w-2xl">
           {!grid ? (
             <div className="rounded-lg border border-dashed border-zinc-300 bg-white p-8 text-center text-sm text-zinc-500">
@@ -748,15 +941,58 @@ export function PlannerApp({ user }: Props) {
                               const isTarget =
                                 targetCell?.dayId === day.id && targetCell?.periodId === period.id;
                               const highlighted = entry && entry.id === highlightEntryId;
+                              const cellKey = `${day.id}|${period.id}`;
+                              const isDropTarget = editable && dropCellKey === cellKey;
+                              const isDragSource = editable && entry?.id === dragEntryId;
+                              const pasteReady = editable && !entry && Boolean(copiedEntry);
                               return (
                                 <td
                                   key={day.id}
                                   draggable={editable && Boolean(entry)}
-                                  onDragStart={() => entry && setSelectedEntry(entry)}
-                                  onDragOver={(e) => editable && e.preventDefault()}
-                                  onDrop={() => {
-                                    if (editable && selectedEntry && entry?.id !== selectedEntry.id) {
-                                      handleMove(selectedEntry, day.id, period.id);
+                                  onDragStart={(e) => {
+                                    if (!entry) return;
+                                    // dataTransfer carries the source id; the
+                                    // panel must NOT open on drag start.
+                                    e.dataTransfer.setData("text/plain", entry.id);
+                                    e.dataTransfer.effectAllowed = "copyMove";
+                                    setDragEntryId(entry.id);
+                                  }}
+                                  onDragEnd={() => {
+                                    setDragEntryId(null);
+                                    setDropCellKey(null);
+                                  }}
+                                  onDragOver={(e) => {
+                                    if (!editable) return;
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = e.ctrlKey || e.altKey ? "copy" : "move";
+                                    setDropCellKey(cellKey);
+                                  }}
+                                  onDrop={(e) => {
+                                    e.preventDefault();
+                                    const sourceId =
+                                      e.dataTransfer.getData("text/plain") || dragEntryId;
+                                    setDropCellKey(null);
+                                    setDragEntryId(null);
+                                    if (!editable || !sourceId || sourceId === entry?.id) return;
+                                    const source = grid?.entries.find(
+                                      (en) => en.id === sourceId,
+                                    );
+                                    if (!source) return;
+                                    if (e.ctrlKey || e.altKey) {
+                                      void runCopy(
+                                        "copy-entry",
+                                        [
+                                          {
+                                            entryId: source.id,
+                                            academicDayId: day.id,
+                                            periodId: period.id,
+                                            classId: source.classId,
+                                          },
+                                        ],
+                                        "Sao chép tiết học",
+                                      );
+                                    } else {
+                                      handleMove(source, day.id, period.id);
                                     }
                                   }}
                                   onClick={() => {
@@ -764,17 +1000,23 @@ export function PlannerApp({ user }: Props) {
                                       if (entry) setSelectedEntry(entry);
                                       return;
                                     }
-                                    if (entry) setSelectedEntry(entry);
-                                    else {
+                                    if (entry) {
+                                      setSelectedEntry(entry);
+                                    } else if (copiedEntry) {
+                                      // Clipboard is loaded: click pastes.
+                                      handlePaste(day.id, period.id);
+                                    } else {
                                       setTargetCell({ dayId: day.id, periodId: period.id });
                                       setSelectedEntry(null);
                                     }
                                   }}
-                                  className={`cursor-pointer border border-zinc-200 px-2 py-1.5 align-top ${
+                                  className={`cursor-pointer border border-zinc-200 px-2 py-1.5 align-top transition-colors ${
                                     isTarget ? "bg-blue-50 ring-2 ring-blue-400" : ""
                                   } ${highlighted ? "ring-2 ring-red-500" : ""} ${
-                                    entry ? "bg-white" : "bg-zinc-50/50"
-                                  }`}
+                                    isDropTarget ? "bg-blue-100/70 ring-2 ring-blue-500 ring-inset" : ""
+                                  } ${isDragSource ? "opacity-40" : ""} ${
+                                    pasteReady ? "bg-emerald-50/50 hover:bg-emerald-100/60" : ""
+                                  } ${entry ? "bg-white" : "bg-zinc-50/50"}`}
                                 >
                                   {entry ? (
                                     <div>
@@ -862,6 +1104,11 @@ export function PlannerApp({ user }: Props) {
                     onCreate={handleCreate}
                     onUpdate={handleUpdate}
                     onDelete={handleDelete}
+                    onCopy={(entry) => {
+                      setCopiedEntry(entry);
+                      setSelectedEntry(null);
+                      setTargetCell(null);
+                    }}
                     onClose={() => {
                       setSelectedEntry(null);
                       setTargetCell(null);
@@ -931,6 +1178,38 @@ export function PlannerApp({ user }: Props) {
                     Kiểm tra xung đột
                   </button>
                 </li>
+                {editable && canWrite && (
+                  <>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActionsOpen(false);
+                          setCopyDayOpen(true);
+                        }}
+                        disabled={busy || !classId || !grid}
+                        className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-40"
+                      >
+                        <Icon name="copy" size={17} />
+                        Chép ngày của lớp
+                      </button>
+                    </li>
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActionsOpen(false);
+                          setCopyClassOpen(true);
+                        }}
+                        disabled={busy || !grid}
+                        className="flex min-h-12 w-full items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 disabled:opacity-40"
+                      >
+                        <Icon name="file-spreadsheet" size={17} />
+                        Chép lịch lớp khác
+                      </button>
+                    </li>
+                  </>
+                )}
                 {version?.status === "DRAFT" && canWrite && (
                   <li>
                     <button
@@ -1063,6 +1342,31 @@ export function PlannerApp({ user }: Props) {
           onClose={() => setToast(null)}
         />
       )}
+
+      {/* Batch copy dialogs */}
+      {copyDayOpen && grid ? (
+        <CopyDayDialog
+          busy={busy}
+          schoolDays={schoolDays}
+          entryCountByDay={entryCountByDay}
+          onConfirm={(sourceDayId, targetDayId) => {
+            void handleCopyDay(sourceDayId, targetDayId);
+          }}
+          onClose={() => setCopyDayOpen(false)}
+        />
+      ) : null}
+      {copyClassOpen && grid ? (
+        <CopyClassDialog
+          busy={busy}
+          classes={classes}
+          sourceClassId={classId}
+          entryCountByClass={entryCountByClass}
+          onConfirm={(sourceClassId, targetClassId) => {
+            void handleCopyClass(sourceClassId, targetClassId);
+          }}
+          onClose={() => setCopyClassOpen(false)}
+        />
+      ) : null}
 
       <ConfirmDialog
         open={showDeleteConfirm}

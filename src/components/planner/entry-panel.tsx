@@ -32,6 +32,8 @@ interface Props {
   onCreate: (payload: Omit<GridEntry, "id" | "status" | "notes"> & { notes?: string | null }) => void;
   onUpdate: (entry: GridEntry, patch: Partial<GridEntry>) => void;
   onDelete: (entry: GridEntry) => void;
+  /** Pick up this lesson for pasting elsewhere (copy clipboard). */
+  onCopy?: (entry: GridEntry) => void;
   onClose: () => void;
 }
 
@@ -60,6 +62,7 @@ export function EntryPanel({
   onCreate,
   onUpdate,
   onDelete,
+  onCopy,
   onClose,
 }: Props) {
   const day = grid.days.find((d) => d.id === (cell?.dayId ?? entry?.academicDayId));
@@ -261,7 +264,7 @@ export function EntryPanel({
       </div>
 
       {editable ? (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={submit}
@@ -270,6 +273,17 @@ export function EntryPanel({
           >
             {entry ? "Cập nhật" : "Thêm tiết học"}
           </button>
+          {entry && onCopy && (
+            <button
+              type="button"
+              onClick={() => onCopy(entry)}
+              disabled={busy}
+              title="Sao chép tiết này để dán vào ô trống khác"
+              className="rounded-md border border-emerald-300 px-3 py-2 text-sm font-medium text-emerald-700 transition-colors hover:bg-emerald-50 disabled:opacity-50"
+            >
+              Sao chép
+            </button>
+          )}
           {entry && (
             <button
               type="button"

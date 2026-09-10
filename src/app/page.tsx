@@ -598,7 +598,7 @@ export default async function LandingPage() {
             <Feature
               icon="refresh-cw"
               bubbleClass="bg-amber-50 text-amber-700"
-              title="Thay giáo và dạy bù"
+              title="Thay giáo viên và dạy bù"
               text="Điều phối dạy thay, hủy tiết và dạy bù ngay trên phiên bản đã công bố. Học sinh thấy ngay giáo viên mới, giáo viên được thông báo tự động."
               delay={70}
             />

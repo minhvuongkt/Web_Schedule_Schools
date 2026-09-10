@@ -1,0 +1,21 @@
+2026-09-10 11:58:25.953 +07 [2768] LOG:  starting PostgreSQL 18.4 on x86_64-windows, compiled by msvc-19.44.35226, 64-bit
+2026-09-10 11:58:25.959 +07 [2768] LOG:  listening on IPv6 address "::1", port 5435
+2026-09-10 11:58:25.960 +07 [2768] LOG:  listening on IPv4 address "127.0.0.1", port 5435
+2026-09-10 11:58:26.035 +07 [20128] LOG:  database system was shut down at 2026-09-10 11:58:25 +07
+2026-09-10 11:58:26.052 +07 [2768] LOG:  database system is ready to accept connections
+2026-09-10 11:59:11.773 +07 [2768] LOG:  client backend (PID 21264) was terminated by exception 0xC0000142
+2026-09-10 11:59:11.773 +07 [2768] HINT:  See C include file "ntstatus.h" for a description of the hexadecimal value.
+2026-09-10 11:59:11.773 +07 [2768] LOG:  terminating any other active server processes
+2026-09-10 11:59:11.810 +07 [2768] LOG:  all server processes terminated; reinitializing
+2026-09-10 12:00:09.802 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 00000000000007DC: error code 487
+2026-09-10 12:00:13.391 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 00000000000017A8: error code 487
+2026-09-10 12:00:38.235 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 00000000000007BC: error code 487
+2026-09-10 12:01:18.267 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 0000000000001330: error code 487
+2026-09-10 12:01:41.328 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 00000000000009E0: error code 487
+2026-09-10 12:01:55.892 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 0000000000001024: error code 487
+2026-09-10 12:02:16.253 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 0000000000000E3C: error code 487
+2026-09-10 12:02:28.843 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 00000000000009B0: error code 487
+2026-09-10 12:03:00.136 +07 [2768] LOG:  could not reserve shared memory region (addr=0000024217120000) for child 0000000000000CFC: error code 487
+2026-09-10 12:03:16.756 +07 [2768] LOG:  received fast shutdown request
+2026-09-10 12:03:16.769 +07 [2768] LOG:  abnormal database system shutdown
+2026-09-10 12:03:16.782 +07 [2768] LOG:  database system is shut down
