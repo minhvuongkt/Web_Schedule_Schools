@@ -39,10 +39,17 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
   const parsed = z
     .object({
-      audience: z.enum(["TEACHERS", "STUDENTS", "ALL"]),
+      audience: z.enum(["TEACHERS", "STUDENTS", "ALL", "SELECTED"]),
       title: z.string().min(2).max(ANNOUNCEMENT_TITLE_MAX),
       body: z.string().min(1).max(ANNOUNCEMENT_BODY_MAX),
+      userIds: z.array(z.string().min(1)).max(500).optional(),
     })
+    .refine(
+      (data) =>
+        data.audience !== "SELECTED" ||
+        (Array.isArray(data.userIds) && data.userIds.length > 0),
+      { message: "Hãy chọn ít nhất một người nhận.", path: ["userIds"] },
+    )
     .safeParse(body);
   if (!parsed.success) return zodErrorResponse(parsed.error.issues);
   try {
@@ -51,6 +58,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         audience: parsed.data.audience,
         title: parsed.data.title,
         body: parsed.data.body,
+        userIds: parsed.data.userIds,
       },
       auth.user,
     );

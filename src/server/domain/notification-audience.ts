@@ -6,14 +6,26 @@ import type { Role } from "@/server/domain/roles";
  * student handbook (/hsv) is class-based and login-free.
  */
 
-export const AUDIENCES = ["TEACHERS", "STUDENTS", "ALL"] as const;
+export const AUDIENCES = ["TEACHERS", "STUDENTS", "ALL", "SELECTED"] as const;
 export type Audience = (typeof AUDIENCES)[number];
 
 export const AUDIENCE_LABELS_VI: Record<Audience, string> = {
   TEACHERS: "Giáo viên & ban giám hiệu",
   STUDENTS: "Học sinh & phụ huynh",
   ALL: "Tất cả mọi người",
+  SELECTED: "Người nhận được chọn",
 };
+
+/**
+ * Account roles that can be picked as individual recipients. Admin roles are
+ * excluded — they have no notification inbox.
+ */
+export const SELECTABLE_ROLES = [
+  "TEACHER",
+  "PRINCIPAL",
+  "STUDENT",
+  "PARENT",
+] as const satisfies readonly Role[];
 
 export interface AudienceTargets {
   /** Account roles that receive an in-app notification (+ Web Push). */
@@ -37,5 +49,8 @@ export function audienceTargets(audience: Audience): AudienceTargets {
         roles: ["TEACHER", "PRINCIPAL", "STUDENT", "PARENT"],
         classAnnouncement: true,
       };
+    case "SELECTED":
+      // Recipients come from the explicit userIds list instead of roles.
+      return { roles: [], classAnnouncement: false };
   }
 }

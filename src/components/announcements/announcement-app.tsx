@@ -1,19 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 
+import { roleLabelVi } from "@/components/leadership/labels";
 import { Icon } from "@/components/ui/icon";
 import {
   AUDIENCES,
   AUDIENCE_LABELS_VI,
   type Audience,
 } from "@/server/domain/notification-audience";
-import type { AnnouncementRow } from "@/server/services/announcement.service";
+import type {
+  AnnouncementRow,
+  SelectableRecipient,
+} from "@/server/services/announcement.service";
 
 /**
  * Broadcast announcements (/admin/thong-bao). Teachers receive in-app
  * notifications + Web Push; students see class announcements in the /hsv
- * handbook. The recent list comes from the send record (payload counts).
+ * handbook. "Người nhận được chọn" sends only to explicitly picked accounts.
  */
 
 const TITLE_MAX = 120;
@@ -25,6 +29,8 @@ const AUDIENCE_HINTS: Record<Audience, string> = {
   STUDENTS:
     "Hiển thị trong sổ tay học sinh (/hsv → Thông báo) cho tất cả các lớp. Tài khoản học sinh/phụ huynh (nếu có) cũng nhận thông báo trong ứng dụng.",
   ALL: "Cả giáo viên, ban giám hiệu và toàn bộ học sinh — kết hợp hai hình thức trên.",
+  SELECTED:
+    "Chỉ những tài khoản được tích chọn bên dưới nhận thông báo (kèm thông báo đẩy nếu họ đã bật).",
 };
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -53,6 +59,14 @@ function formatDateTime(iso: string): string {
   }).format(date);
 }
 
+function normalizeSearch(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\u2019/g, "'")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 export function AnnouncementApp() {
   const [audience, setAudience] = useState<Audience>("TEACHERS");
   const [title, setTitle] = useState("");
@@ -62,6 +76,14 @@ export function AnnouncementApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const [recent, setRecent] = useState<AnnouncementRow[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
+
+  const [recipientOptions, setRecipientOptions] = useState<SelectableRecipient[]>([]);
+  const [recipientsLoading, setRecipientsLoading] = useState(false);
+  const [recipientsError, setRecipientsError] = useState<string | null>(null);
+  const [retryTick, setRetryTick] = useState(0);
+  const recipientsRequested = useRef(false);
+  const [recipientSearch, setRecipientSearch] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const loadRecent = useCallback(async () => {
     const data = await api<{ announcements: AnnouncementRow[] }>(
@@ -89,6 +111,64 @@ export function AnnouncementApp() {
     };
   }, []);
 
+  // Load the pickable accounts lazily, the first time SELECTED is chosen.
+  // The ref guard keeps this to one fetch per attempt; a failed attempt is
+  // retried only via the explicit "Thử lại" button (retryTick). The effect
+  // intentionally does not cancel its own fetch: changing local state here
+  // must never abort the in-flight request.
+  useEffect(() => {
+    if (audience !== "SELECTED" || recipientsRequested.current) return;
+    recipientsRequested.current = true;
+    void (async () => {
+      setRecipientsLoading(true);
+      setRecipientsError(null);
+      try {
+        const data = await api<{ recipients: SelectableRecipient[] }>(
+          "/api/announcements/recipients",
+        );
+        setRecipientOptions(data.recipients);
+      } catch (e) {
+        setRecipientsError(
+          e instanceof Error ? e.message : "Không tải được danh sách người nhận.",
+        );
+      } finally {
+        setRecipientsLoading(false);
+      }
+    })();
+  }, [audience, retryTick]);
+
+  function retryRecipients() {
+    recipientsRequested.current = false;
+    setRetryTick((tick) => tick + 1);
+  }
+
+  const filteredRecipients = useMemo(() => {
+    const needle = normalizeSearch(recipientSearch.trim());
+    if (!needle) return recipientOptions;
+    return recipientOptions.filter((r) =>
+      [r.displayName, r.username, r.teacherCode ?? "", roleLabelVi(r.role)]
+        .map(normalizeSearch)
+        .some((haystack) => haystack.includes(needle)),
+    );
+  }, [recipientOptions, recipientSearch]);
+
+  function toggleRecipient(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllFiltered() {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      for (const r of filteredRecipients) next.add(r.id);
+      return next;
+    });
+  }
+
   async function submit(event: FormEvent) {
     event.preventDefault();
     setSending(true);
@@ -97,7 +177,12 @@ export function AnnouncementApp() {
     try {
       const data = await api<{ announcement: AnnouncementRow }>("/api/announcements", {
         method: "POST",
-        body: JSON.stringify({ audience, title, body }),
+        body: JSON.stringify({
+          audience,
+          title,
+          body,
+          ...(audience === "SELECTED" ? { userIds: [...selectedIds] } : {}),
+        }),
       });
       const sent = data.announcement;
       const parts = [`${sent.recipientCount} tài khoản`];
@@ -105,6 +190,7 @@ export function AnnouncementApp() {
       setNotice(`Đã gửi tới ${parts.join(" và ")}.`);
       setTitle("");
       setBody("");
+      if (audience === "SELECTED") setSelectedIds(new Set());
       await loadRecent();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Không gửi được thông báo.");
@@ -113,6 +199,13 @@ export function AnnouncementApp() {
     }
   }
 
+  const selectedCount = selectedIds.size;
+  const sendDisabled =
+    sending ||
+    title.trim().length < 2 ||
+    body.trim().length < 1 ||
+    (audience === "SELECTED" && selectedCount === 0);
+
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
       <header className="mb-5">
@@ -120,9 +213,9 @@ export function AnnouncementApp() {
           Gửi thông báo
         </h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Soạn thông báo chung gửi tới giáo viên, học sinh hoặc toàn trường.
-          Giáo viên nhận ngay trong mục Thông báo và trên điện thoại; học sinh
-          xem trong sổ tay điện tử.
+          Soạn thông báo chung gửi tới giáo viên, học sinh, toàn trường hoặc
+          chọn từng người nhận cụ thể. Giáo viên nhận ngay trong mục Thông báo
+          và trên điện thoại; học sinh xem trong sổ tay điện tử.
         </p>
       </header>
 
@@ -171,6 +264,11 @@ export function AnnouncementApp() {
                   <span className="min-w-0">
                     <span className="block text-sm font-semibold text-zinc-900">
                       {AUDIENCE_LABELS_VI[option]}
+                      {option === "SELECTED" && active && selectedCount > 0 ? (
+                        <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">
+                          {selectedCount} đã chọn
+                        </span>
+                      ) : null}
                     </span>
                     <span className="mt-0.5 block text-xs leading-relaxed text-zinc-500">
                       {AUDIENCE_HINTS[option]}
@@ -181,6 +279,89 @@ export function AnnouncementApp() {
             })}
           </div>
         </fieldset>
+
+        {audience === "SELECTED" ? (
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-medium text-zinc-600">
+                Đã chọn {selectedCount} người nhận
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={selectAllFiltered}
+                  disabled={filteredRecipients.length === 0}
+                  className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 disabled:opacity-50"
+                >
+                  Chọn tất cả đang hiện
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  disabled={selectedCount === 0}
+                  className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-rose-400 hover:text-rose-700 disabled:opacity-50"
+                >
+                  Bỏ chọn hết
+                </button>
+              </div>
+            </div>
+            <label className="mt-2 block">
+              <span className="sr-only">Tìm người nhận</span>
+              <input
+                className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-blue-600 focus:outline-none focus:ring-1 focus:ring-blue-600"
+                value={recipientSearch}
+                onChange={(e) => setRecipientSearch(e.target.value)}
+                placeholder="Tìm theo tên, tài khoản hoặc mã giáo viên…"
+                type="search"
+              />
+            </label>
+            {recipientsError ? (
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p role="alert" className="text-xs text-rose-700">
+                  {recipientsError}
+                </p>
+                <button
+                  type="button"
+                  onClick={retryRecipients}
+                  className="rounded-md border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700"
+                >
+                  Thử lại
+                </button>
+              </div>
+            ) : recipientsLoading ? (
+              <p className="mt-3 text-center text-xs text-zinc-500">Đang tải danh sách…</p>
+            ) : (
+              <ul className="mt-2 max-h-64 divide-y divide-zinc-100 overflow-y-auto rounded-lg border border-zinc-200 bg-white">
+                {filteredRecipients.map((r) => (
+                  <li key={r.id}>
+                    <label className="flex cursor-pointer items-center gap-3 px-3 py-2.5 hover:bg-zinc-50">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(r.id)}
+                        onChange={() => toggleRecipient(r.id)}
+                        className="h-4 w-4 shrink-0 accent-blue-700"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-medium text-zinc-900">
+                          {r.displayName}
+                        </span>
+                        <span className="block truncate text-xs text-zinc-500">
+                          {roleLabelVi(r.role)}
+                          {r.teacherCode ? ` · ${r.teacherCode}` : ""} · {r.username}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                ))}
+                {filteredRecipients.length === 0 ? (
+                  <li className="px-3 py-4 text-center text-xs text-zinc-500">
+                    Không tìm thấy người nhận phù hợp.
+                  </li>
+                ) : null}
+              </ul>
+            )}
+          </div>
+        ) : null}
 
         <label className="block">
           <span className="mb-1 flex items-center justify-between gap-2 text-sm font-medium text-zinc-700">
@@ -230,7 +411,7 @@ export function AnnouncementApp() {
         <div className="flex justify-end">
           <button
             type="submit"
-            disabled={sending || title.trim().length < 2 || body.trim().length < 1}
+            disabled={sendDisabled}
             className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-blue-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon name="send" size={15} />
@@ -279,6 +460,12 @@ export function AnnouncementApp() {
                   {item.recipientCount} tài khoản
                   {item.classCount > 0 ? ` · ${item.classCount} lớp` : ""}
                 </p>
+                {item.recipientNames.length > 0 ? (
+                  <p className="mt-0.5 text-xs text-zinc-400">
+                    {item.recipientNames.slice(0, 5).join(", ")}
+                    {item.recipientNames.length > 5 ? "…" : ""}
+                  </p>
+                ) : null}
               </li>
             ))}
           </ul>

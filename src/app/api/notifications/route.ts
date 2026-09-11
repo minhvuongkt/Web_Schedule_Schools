@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/server/db";
 import { requireApiUser } from "@/server/api/timetable-api";
 import type { SessionUser } from "@/server/auth/session";
+import { clearNotifications } from "@/server/services/notification.service";
 
 /**
  * GET /api/notifications — the caller's notifications (newest first).
- * POST /api/notifications/read — body {ids} or {all}.
+ * DELETE /api/notifications — clear the caller's inbox.
+ * Mark-read lives at POST /api/notifications/read.
  */
 
 export async function GET(): Promise<NextResponse> {
@@ -43,34 +45,10 @@ export async function GET(): Promise<NextResponse> {
   });
 }
 
-export async function POST(request: Request): Promise<NextResponse> {
+/** DELETE /api/notifications — clear the caller's whole inbox. */
+export async function DELETE(): Promise<NextResponse> {
   const auth = await requireApiUser();
   if (!auth.ok) return auth.response;
-  const user = auth.user;
-
-  let body: { ids?: string[]; all?: boolean };
-  try {
-    body = (await request.json()) as { ids?: string[]; all?: boolean };
-  } catch {
-    return NextResponse.json({ error: { code: "INVALID_JSON", message: "JSON không hợp lệ." } }, { status: 400 });
-  }
-
-  if (body.all) {
-    const { count } = await prisma.notificationRecipient.updateMany({
-      where: { userId: user.id, readAt: null },
-      data: { readAt: new Date() },
-    });
-    return NextResponse.json({ ok: true, updated: count });
-  }
-  if (Array.isArray(body.ids) && body.ids.length > 0) {
-    const { count } = await prisma.notificationRecipient.updateMany({
-      where: { userId: user.id, notificationId: { in: body.ids }, readAt: null },
-      data: { readAt: new Date() },
-    });
-    return NextResponse.json({ ok: true, updated: count });
-  }
-  return NextResponse.json(
-    { error: { code: "VALIDATION_ERROR", message: "Cần ids hoặc all=true." } },
-    { status: 400 },
-  );
+  const cleared = await clearNotifications(auth.user);
+  return NextResponse.json({ ok: true, cleared });
 }

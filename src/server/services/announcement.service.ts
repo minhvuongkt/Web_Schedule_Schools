@@ -2,6 +2,7 @@ import { prisma } from "@/server/db";
 import {
   audienceTargets,
   isAudience,
+  SELECTABLE_ROLES,
   type Audience,
 } from "@/server/domain/notification-audience";
 import { assertPermission, type Role } from "@/server/domain/roles";
@@ -16,6 +17,7 @@ import type { SessionUser } from "@/server/services/auth.service";
  *   (+ Web Push fan-out via publishNotificationsChanged), type ANNOUNCEMENT.
  * - Student audiences also get one public CLASS_ANNOUNCEMENT row per active
  *   class (the /hsv handbook is class-based and login-free).
+ * - SELECTED sends only to the explicitly chosen account ids.
  *
  * The ANNOUNCEMENT row is always created as the send record (even when no
  * account matches the audience) so the admin history stays complete.
@@ -23,11 +25,14 @@ import type { SessionUser } from "@/server/services/auth.service";
 
 export const ANNOUNCEMENT_TITLE_MAX = 120;
 export const ANNOUNCEMENT_BODY_MAX = 1000;
+const RECIPIENT_NAMES_STORED = 20;
 
 export interface SendAnnouncementInput {
   audience: Audience;
   title: string;
   body: string;
+  /** Required when audience is SELECTED: account ids to notify. */
+  userIds?: string[];
 }
 
 export interface AnnouncementRow {
@@ -38,6 +43,16 @@ export interface AnnouncementRow {
   createdAt: string;
   recipientCount: number;
   classCount: number;
+  /** Display names of selected recipients (capped) — SELECTED sends only. */
+  recipientNames: string[];
+}
+
+export interface SelectableRecipient {
+  id: string;
+  username: string;
+  displayName: string;
+  role: string;
+  teacherCode: string | null;
 }
 
 function assertSend(user: SessionUser): void {
@@ -48,6 +63,7 @@ interface AnnouncementPayload {
   audience?: string;
   recipientCount?: number;
   classCount?: number;
+  recipientNames?: unknown;
 }
 
 function toRow(notification: {
@@ -58,6 +74,9 @@ function toRow(notification: {
   payload: unknown;
 }): AnnouncementRow {
   const payload = (notification.payload ?? {}) as AnnouncementPayload;
+  const names = Array.isArray(payload.recipientNames)
+    ? payload.recipientNames.filter((n): n is string => typeof n === "string")
+    : [];
   return {
     id: notification.id,
     audience: isAudience(payload.audience ?? "") ? (payload.audience as Audience) : "ALL",
@@ -66,7 +85,33 @@ function toRow(notification: {
     createdAt: notification.createdAt.toISOString(),
     recipientCount: payload.recipientCount ?? 0,
     classCount: payload.classCount ?? 0,
+    recipientNames: names,
   };
+}
+
+/** Active accounts the admin can pick individually (non-admin roles). */
+export async function listSelectableRecipients(
+  actor: SessionUser,
+): Promise<SelectableRecipient[]> {
+  assertSend(actor);
+  const users = await prisma.user.findMany({
+    where: { isActive: true, role: { in: [...SELECTABLE_ROLES] } },
+    select: {
+      id: true,
+      username: true,
+      displayName: true,
+      role: true,
+      teacher: { select: { code: true } },
+    },
+    orderBy: [{ role: "asc" }, { displayName: "asc" }],
+  });
+  return users.map((u) => ({
+    id: u.id,
+    username: u.username,
+    displayName: u.displayName,
+    role: u.role,
+    teacherCode: u.teacher?.code ?? null,
+  }));
 }
 
 export async function sendAnnouncement(
@@ -97,11 +142,34 @@ export async function sendAnnouncement(
   }
 
   const { roles, classAnnouncement } = audienceTargets(input.audience);
+  const selectedIds =
+    input.audience === "SELECTED"
+      ? [...new Set((input.userIds ?? []).filter((id) => id.trim() !== ""))]
+      : [];
+  if (input.audience === "SELECTED" && selectedIds.length === 0) {
+    throw new MutationError(
+      "VALIDATION_ERROR",
+      "Hãy chọn ít nhất một người nhận.",
+      {},
+      400,
+    );
+  }
+
   const [recipients, classes] = await Promise.all([
-    prisma.user.findMany({
-      where: { role: { in: [...roles] }, isActive: true },
-      select: { id: true },
-    }),
+    input.audience === "SELECTED"
+      ? prisma.user.findMany({
+          where: {
+            id: { in: selectedIds },
+            isActive: true,
+            role: { in: [...SELECTABLE_ROLES] },
+          },
+          select: { id: true, displayName: true },
+          orderBy: { displayName: "asc" },
+        })
+      : prisma.user.findMany({
+          where: { role: { in: [...roles] }, isActive: true },
+          select: { id: true, displayName: true },
+        }),
     classAnnouncement
       ? prisma.class.findMany({
           where: { schoolYear: { status: "ACTIVE" } },
@@ -109,6 +177,15 @@ export async function sendAnnouncement(
         })
       : Promise.resolve([] as { id: string }[]),
   ]);
+
+  if (input.audience === "SELECTED" && recipients.length === 0) {
+    throw new MutationError(
+      "VALIDATION_ERROR",
+      "Không tìm thấy tài khoản hợp lệ trong danh sách đã chọn.",
+      {},
+      400,
+    );
+  }
 
   const created = await prisma.$transaction(async (t) => {
     const notification = await t.notification.create({
@@ -120,6 +197,10 @@ export async function sendAnnouncement(
           audience: input.audience,
           recipientCount: recipients.length,
           classCount: classes.length,
+          recipientNames:
+            input.audience === "SELECTED"
+              ? recipients.slice(0, RECIPIENT_NAMES_STORED).map((r) => r.displayName)
+              : undefined,
         },
       },
     });

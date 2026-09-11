@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 import { apiErrorToMessage, apiFetch } from "@/components/leadership/api";
 import { ErrorBanner } from "@/components/leadership/ErrorBanner";
+import { ClearAllButton } from "@/components/notifications/ClearAllButton";
 import { MarkAllReadButton } from "@/components/notifications/MarkAllReadButton";
 import { NotificationCard } from "@/components/notifications/NotificationCard";
 import { NotificationLiveRefresher } from "@/components/notifications/live-refresher";
@@ -55,7 +56,12 @@ export default async function TeacherNotificationsPage() {
               <NotificationLiveRefresher />
             </div>
           </div>
-          {unreadCount > 0 ? <MarkAllReadButton /> : null}
+          {notifications && notifications.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {unreadCount > 0 ? <MarkAllReadButton /> : null}
+              <ClearAllButton count={notifications.length} />
+            </div>
+          ) : null}
         </header>
 
         <div className="mb-6 space-y-2">
