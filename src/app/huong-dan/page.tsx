@@ -209,10 +209,13 @@ export default function GuidePage() {
               Giáo viên
             </h2>
             <ol className="mt-4 space-y-4">
-              <Step n={1} title="Đăng nhập">
+              <Step n={1} title="Đăng nhập lần đầu — thiết lập tài khoản">
                 Mở trang <Link href="/dang-nhap" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Đăng nhập</Link>{" "}
-                và dùng tài khoản do nhà trường cấp. Nếu chưa có hoặc quên mật
-                khẩu, liên hệ văn phòng trường để được cấp lại.
+                và dùng tài khoản do nhà trường cấp. <strong>Lần đầu đăng nhập</strong>,
+                hệ thống yêu cầu thiết lập theo 3 bước: <strong>nhập email</strong> →{" "}
+                <strong>đặt mật khẩu riêng</strong> → <strong>xác nhận email</strong>.
+                Sau đó bạn đăng nhập bằng mật khẩu mới. (Quên mật khẩu: liên hệ
+                quản trị để cấp lại — xem mục Câu hỏi thường gặp.)
               </Step>
               <Step n={2} title="Xem lịch dạy của tôi">
                 Sau khi đăng nhập bạn sẽ vào trang{" "}
@@ -222,13 +225,20 @@ export default function GuidePage() {
                 cả tuần — có thể đổi giữa dạng <em>Danh sách</em> và{" "}
                 <em>Bảng</em>, lọc theo lớp hoặc môn học.
               </Step>
-              <Step n={3} title="Dạy thay &amp; dạy bù">
+              <Step n={3} title="Đổi mật khẩu (tự làm, không cần nhờ ai)">
+                Menu bên trái → <MenuPath>Tài khoản của tôi</MenuPath> → mục{" "}
+                <strong>Đổi mật khẩu</strong>: nhập mật khẩu hiện tại và mật
+                khẩu mới (tối thiểu 8 ký tự). Sau khi đổi, các thiết bị khác sẽ
+                phải đăng nhập lại. Tại đây bạn cũng đổi được <strong>email
+                liên hệ</strong>.
+              </Step>
+              <Step n={4} title="Dạy thay &amp; dạy bù">
                 Khi được xếp dạy thay, trên lịch hiện nhãn màu{" "}
                 <strong>“Dạy thay cho …”</strong> kèm tên giáo viên gốc. Tiết
                 dạy bù có nhãn riêng. Bạn không cần làm gì thêm — chỉ cần đến
                 đúng giờ.
               </Step>
-              <Step n={4} title="Nhận thông báo trên điện thoại">
+              <Step n={5} title="Nhận thông báo trên điện thoại">
                 Vào trang <strong>Thông báo</strong>, bấm{" "}
                 <MenuPath>Bật thông báo</MenuPath> và đồng ý khi trình duyệt
                 hỏi. Từ đó mọi thay đổi (đổi lịch, dạy thay, công bố lịch mới,
@@ -242,7 +252,7 @@ export default function GuidePage() {
                 bạn sẽ thấy <strong>dải nhắc màu vàng</strong> ở đầu trang — bấm
                 “Xem thông báo” để đọc ngay.
               </Step>
-              <Step n={5} title="In lịch dạy">
+              <Step n={6} title="In lịch dạy">
                 Mở trang cần in, bấm tổ hợp <Kbd>Ctrl</Kbd> + <Kbd>P</Kbd> —
                 trang sẽ in sạch sẽ, không có thanh menu.
               </Step>
@@ -383,11 +393,14 @@ export default function GuidePage() {
                 Trang <strong>Tài khoản</strong>: tạo tài khoản mới cho giáo
                 viên / cán bộ, gán vai trò, cấp lại mật khẩu (mật khẩu mới chỉ
                 hiện một lần — hãy copy đưa cho người dùng), khóa tài khoản khi
-                cần. Khi tạo nhầm, bấm <MenuPath>Xóa</MenuPath> — phải gõ đúng
-                tên đăng nhập để xác nhận; tài khoản bị xóa vĩnh viễn nhưng{" "}
-                <strong>nhật ký thao tác vẫn được giữ lại</strong>. Nếu chỉ muốn
-                ngăn đăng nhập tạm thời, hãy dùng <MenuPath>Khóa</MenuPath> thay
-                vì xóa.
+                cần. Tài khoản mới và tài khoản vừa cấp lại mật khẩu hiện nhãn
+                vàng <strong>“Chưa thiết lập”</strong> — người dùng sẽ tự nhập
+                email và đặt mật khẩu riêng ở lần đăng nhập kế tiếp (hệ thống
+                bắt buộc). Khi tạo nhầm, bấm <MenuPath>Xóa</MenuPath> — phải gõ
+                đúng tên đăng nhập để xác nhận; tài khoản bị xóa vĩnh viễn
+                nhưng <strong>nhật ký thao tác vẫn được giữ lại</strong>. Nếu
+                chỉ muốn ngăn đăng nhập tạm thời, hãy dùng{" "}
+                <MenuPath>Khóa</MenuPath> thay vì xóa.
               </Step>
               <Step n={3} title="Danh mục trường học">
                 Trang <strong>Danh mục</strong>: thêm / sửa giáo viên, lớp,
@@ -440,7 +453,11 @@ export default function GuidePage() {
                 </dt>
                 <dd className="mt-1 text-sm text-stone-600">
                   Liên hệ quản trị nhà trường. Quản trị vào trang{" "}
-                  <strong>Tài khoản</strong> và bấm “Cấp lại mật khẩu”.
+                  <strong>Tài khoản</strong> và bấm “Cấp lại mật khẩu”. Người
+                  dùng đăng nhập bằng mật khẩu tạm đó rồi hệ thống yêu cầu{" "}
+                  <strong>thiết lập lại</strong> (nhập email + đặt mật khẩu riêng
+                  ở lần đăng nhập kế tiếp). Muốn tự đổi mật khẩu bất cứ lúc nào:{" "}
+                  <strong>Tài khoản của tôi</strong> → Đổi mật khẩu.
                 </dd>
               </div>
               <div className="rounded-xl bg-white p-4 ring-1 ring-stone-900/5">
