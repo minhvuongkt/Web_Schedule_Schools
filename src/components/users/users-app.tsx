@@ -14,6 +14,8 @@ import type { UserRow } from "@/server/services/user.service";
  * User account management (/admin/tai-khoan, users:manage = SUPER_ADMIN).
  * Creates accounts, edits profile/role/teacher-link, resets passwords and
  * deactivates users. Usernames are immutable; deactivation revokes sessions.
+ * Emails are teacher-owned: admins never set them — each user enters and
+ * code-verifies their own address in the first-login wizard / account page.
  */
 
 interface TeacherOption {
@@ -192,7 +194,8 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
             Cấp tài khoản đăng nhập, gán vai trò và đặt lại mật khẩu cho giáo
-            viên, ban giám hiệu và quản trị viên.
+            viên, ban giám hiệu và quản trị viên. Email liên hệ do mỗi người tự
+            nhập và xác nhận mã ở lần đăng nhập đầu tiên.
           </p>
         </header>
 
@@ -603,7 +606,6 @@ interface UserFormData {
   displayName: string;
   password: string;
   role: string;
-  email: string;
   teacherId: string | null;
 }
 
@@ -623,7 +625,6 @@ function UserCreateModal({
     displayName: "",
     password: "",
     role: "TEACHER",
-    email: "",
     teacherId: "",
   });
 
@@ -633,7 +634,6 @@ function UserCreateModal({
     e.preventDefault();
     onSubmit({
       ...form,
-      email: form.email.trim(),
       teacherId: needsTeacher && form.teacherId ? form.teacherId : null,
     });
   }
@@ -665,29 +665,22 @@ function UserCreateModal({
             />
           </Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Mật khẩu" hint="Tối thiểu 8 ký tự">
-            <input
-              className={inputClass}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              type="text"
-              autoComplete="new-password"
-              required
-              minLength={8}
-              maxLength={128}
-            />
-          </Field>
-          <Field label="Email (không bắt buộc)">
-            <input
-              className={inputClass}
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              type="email"
-              maxLength={160}
-            />
-          </Field>
-        </div>
+        <Field label="Mật khẩu" hint="Tối thiểu 8 ký tự">
+          <input
+            className={inputClass}
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            type="text"
+            autoComplete="new-password"
+            required
+            minLength={8}
+            maxLength={128}
+          />
+        </Field>
+        <p className="rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+          Không nhập email tại đây: giáo viên tự nhập email và nhập mã xác nhận
+          gửi tới địa chỉ đó ở lần đăng nhập đầu tiên.
+        </p>
         <Field label="Vai trò">
           <Select
             className="w-full"
@@ -753,14 +746,12 @@ function UserEditModal({
   onClose: () => void;
   onSubmit: (data: {
     displayName: string;
-    email: string | null;
     role: string;
     teacherId: string | null;
   }) => void;
 }) {
   const [form, setForm] = useState({
     displayName: initial.displayName,
-    email: initial.email ?? "",
     role: initial.role,
     teacherId: initial.teacher?.id ?? "",
   });
@@ -774,34 +765,32 @@ function UserEditModal({
           e.preventDefault();
           onSubmit({
             displayName: form.displayName.trim(),
-            email: form.email.trim() === "" ? null : form.email.trim(),
             role: form.role,
             teacherId: needsTeacher && form.teacherId ? form.teacherId : null,
           });
         }}
         className="space-y-4"
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Tên hiển thị">
-            <input
-              className={inputClass}
-              value={form.displayName}
-              onChange={(e) => setForm({ ...form, displayName: e.target.value })}
-              required
-              minLength={2}
-              maxLength={120}
-            />
-          </Field>
-          <Field label="Email (không bắt buộc)">
-            <input
-              className={inputClass}
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              type="email"
-              maxLength={160}
-            />
-          </Field>
-        </div>
+        <Field label="Tên hiển thị">
+          <input
+            className={inputClass}
+            value={form.displayName}
+            onChange={(e) => setForm({ ...form, displayName: e.target.value })}
+            required
+            minLength={2}
+            maxLength={120}
+          />
+        </Field>
+        <p className="rounded-lg bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+          Email liên hệ:{" "}
+          {initial.email ? (
+            <span className="font-medium text-zinc-700">{initial.email}</span>
+          ) : (
+            "chưa có"
+          )}
+          . Chỉ chính người dùng mới đổi được email (kèm mã xác nhận) tại trang
+          Tài khoản của tôi.
+        </p>
         <Field label="Vai trò">
           <Select
             className="w-full"

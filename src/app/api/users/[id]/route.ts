@@ -5,7 +5,7 @@ import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { requireApiUser, mutationErrorResponse, type Params } from "@/server/api/timetable-api";
 import { deleteUser, updateUser } from "@/server/services/user.service";
 
-/** PATCH /api/users/:id  {displayName?, email?, role?, teacherId?, isActive?} */
+/** PATCH /api/users/:id  {displayName?, role?, teacherId?, isActive?} — no email (teacher-owned). */
 export async function PATCH(
   request: Request,
   { params }: Params,
@@ -22,7 +22,8 @@ export async function PATCH(
   const parsed = z
     .object({
       displayName: z.string().min(2).max(120).optional(),
-      email: z.string().email().max(160).nullish(),
+      // email is teacher-owned (first-login wizard / account page); an email
+      // field sent by a stale client is ignored, not stored.
       role: z
         .enum(["SUPER_ADMIN", "TIMETABLE_ADMIN", "PRINCIPAL", "TEACHER", "STUDENT", "PARENT"])
         .optional(),
@@ -37,8 +38,6 @@ export async function PATCH(
         id,
         {
           displayName: parsed.data.displayName,
-          // Preserve explicit null (clear) vs absent (keep) — do not coerce.
-          email: parsed.data.email,
           role: parsed.data.role,
           teacherId: parsed.data.teacherId,
           isActive: parsed.data.isActive,

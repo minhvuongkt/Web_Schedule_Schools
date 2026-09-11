@@ -43,7 +43,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         "STUDENT",
         "PARENT",
       ]),
-      email: z.string().email().max(160).nullish(),
+      // email is teacher-owned (first-login wizard / account page); an email
+      // field sent by a stale client is ignored, not stored.
       teacherId: z.string().min(1).nullish(),
     })
     .safeParse(body);
@@ -56,7 +57,6 @@ export async function POST(request: Request): Promise<NextResponse> {
           displayName: parsed.data.displayName,
           password: parsed.data.password,
           role: parsed.data.role,
-          email: parsed.data.email ?? null,
           teacherId: parsed.data.teacherId ?? null,
         },
         auth.user,

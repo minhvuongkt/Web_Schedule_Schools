@@ -395,9 +395,11 @@ export default function GuidePage() {
                 Trang <strong>Tài khoản</strong>: tạo tài khoản mới cho giáo
                 viên / cán bộ, gán vai trò, cấp lại mật khẩu (mật khẩu mới chỉ
                 hiện một lần — hãy copy đưa cho người dùng), khóa tài khoản khi
-                cần. Tài khoản mới và tài khoản vừa cấp lại mật khẩu hiện nhãn
-                vàng <strong>“Chưa thiết lập”</strong> — người dùng sẽ tự nhập
-                email và đặt mật khẩu riêng ở lần đăng nhập kế tiếp (hệ thống
+                cần. Quản trị <strong>không nhập email</strong>: email liên hệ
+                do chính người dùng tự nhập và nhập mã xác nhận ở lần đăng nhập
+                đầu tiên. Tài khoản mới và tài khoản vừa cấp lại mật khẩu hiện
+                nhãn vàng <strong>“Chưa thiết lập”</strong> — người dùng sẽ tự
+                nhập email và đặt mật khẩu riêng ở lần đăng nhập kế tiếp (hệ thống
                 bắt buộc). Khi tạo nhầm, bấm <MenuPath>Xóa</MenuPath> — phải gõ
                 đúng tên đăng nhập để xác nhận; tài khoản bị xóa vĩnh viễn
                 nhưng <strong>nhật ký thao tác vẫn được giữ lại</strong>. Nếu

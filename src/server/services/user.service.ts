@@ -171,7 +171,6 @@ export interface CreateUserInput {
   displayName: string;
   password: string;
   role: string;
-  email?: string | null;
   teacherId?: string | null;
 }
 
@@ -199,30 +198,26 @@ export async function createUser(
   if (!isRole(input.role)) {
     throw new MutationError("VALIDATION_ERROR", `Vai trò phải thuộc ${ROLES.join(", ")}.`, {}, 400);
   }
-  const email = input.email?.trim() ? input.email.trim() : null;
 
   return prisma.$transaction(async (t) => {
-    const clash = await t.user.findFirst({
-      where: { OR: [{ username }, ...(email ? [{ email }] : [])] },
-      select: { username: true, email: true },
+    const clash = await t.user.findUnique({
+      where: { username },
+      select: { id: true },
     });
-    if (clash?.username === username) {
+    if (clash) {
       throw new MutationError("USERNAME_TAKEN", "Tên đăng nhập đã tồn tại.", {}, 409);
-    }
-    if (clash?.email && email && clash.email === email) {
-      throw new MutationError("EMAIL_TAKEN", "Email đã được sử dụng.", {}, 409);
     }
 
     if (input.teacherId) {
       await assertTeacherLinkable(t, input.teacherId);
     }
 
-    // The User↔Teacher FK lives on Teacher.userId (one-sided relation).
+    // Email is deliberately NOT settable here: teachers enter their own
+    // address (and confirm a code sent to it) in the first-login wizard.
     const created = await t.user.create({
       data: {
         username,
         displayName,
-        email,
         role: input.role,
         passwordHash: hashPassword(input.password),
       },
@@ -239,7 +234,6 @@ export async function createUser(
     await audit(t, actor, "CREATE", created.id, null, {
       username,
       displayName,
-      email,
       role: input.role,
       teacherId: input.teacherId ?? null,
     }, "account created");
@@ -249,7 +243,6 @@ export async function createUser(
 
 export interface UpdateUserInput {
   displayName?: string;
-  email?: string | null;
   role?: string;
   teacherId?: string | null;
   isActive?: boolean;
@@ -319,22 +312,6 @@ export async function updateUser(
       await assertTeacherLinkable(t, nextTeacherId, id);
     }
 
-    const email =
-      input.email !== undefined
-        ? input.email && input.email.trim() !== ""
-          ? input.email.trim()
-          : null
-        : before.email;
-    if (email) {
-      const emailClash = await t.user.findFirst({
-        where: { email, id: { not: id } },
-        select: { id: true },
-      });
-      if (emailClash) {
-        throw new MutationError("EMAIL_TAKEN", "Email đã được sử dụng.", {}, 409);
-      }
-    }
-
     if (before.teacher && before.teacher.id !== nextTeacherId) {
       await t.teacher.update({ where: { id: before.teacher.id }, data: { userId: null } });
     }
@@ -342,11 +319,12 @@ export async function updateUser(
       await t.teacher.update({ where: { id: nextTeacherId }, data: { userId: id } });
     }
 
+    // Email is teacher-owned: it is never edited from the admin console
+    // (only the owner can change it via the code-verified account page).
     const updated = await t.user.update({
       where: { id },
       data: {
         displayName: input.displayName !== undefined ? input.displayName.trim() : undefined,
-        email,
         role: input.role,
         isActive: input.isActive,
       },
@@ -365,14 +343,12 @@ export async function updateUser(
       id,
       {
         displayName: before.displayName,
-        email: before.email,
         role: before.role,
         teacherId: before.teacher?.id ?? null,
         isActive: before.isActive,
       },
       {
         displayName: updated.displayName,
-        email: updated.email,
         role: updated.role,
         teacherId: updated.teacher?.id ?? null,
         isActive: updated.isActive,
