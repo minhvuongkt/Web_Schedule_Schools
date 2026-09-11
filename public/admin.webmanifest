@@ -4,7 +4,7 @@
   "short_name": "Quản trị",
   "description": "Xếp thời khóa biểu, phân công, tài khoản và thông báo — Trường PTDTBT TH & THCS Măng Cành.",
   "start_url": "/admin",
-  "scope": "/",
+  "scope": "/admin",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fafafa",

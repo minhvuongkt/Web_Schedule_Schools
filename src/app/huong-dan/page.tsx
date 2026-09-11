@@ -157,8 +157,9 @@ export default function GuidePage() {
                 ra danh sách giáo viên họ Nguyễn Thị.
               </Step>
               <Step n={4} title="Cài app lên màn hình chính (khuyên dùng)">
-                Hệ thống có <strong>3 ứng dụng riêng</strong>, cài từ đúng khu
-                vực để mở thẳng vào việc mình cần:
+                Mỗi khu vực có <strong>ứng dụng riêng</strong> — cài từ đúng
+                khu vực để mở thẳng vào việc mình cần, và app chỉ mở đúng khu
+                vực đó:
                 <ul className="mt-1.5 list-disc space-y-1 pl-5">
                   <li>
                     <strong>Học sinh:</strong> mở trang{" "}
@@ -167,20 +168,34 @@ export default function GuidePage() {
                     <em>“Sổ tay học sinh”</em>.
                   </li>
                   <li>
+                    <strong>Phụ huynh / xem thời khóa biểu:</strong> mở trang{" "}
+                    <Link href="/tkb" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Thời khóa biểu</Link>,
+                    bấm <MenuPath>Cài đặt ứng dụng</MenuPath> → cài app{" "}
+                    <em>“TKB Măng Cành”</em>.
+                  </li>
+                  <li>
                     <strong>Giáo viên:</strong> mở trang{" "}
                     <Link href="/gv" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Lịch dạy</Link>,
                     bấm <MenuPath>Cài đặt ứng dụng</MenuPath> trong menu bên trái
                     → cài app <em>“Lịch dạy”</em>.
                   </li>
                   <li>
-                    <strong>Quản trị / ban giám hiệu:</strong> mở trang{" "}
+                    <strong>Quản trị thời khóa biểu:</strong> mở trang{" "}
                     <Link href="/admin" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Xếp thời khóa biểu</Link>{" "}
                     → cài app <em>“Quản trị nhà trường”</em>.
                   </li>
+                  <li>
+                    <strong>Ban giám hiệu:</strong> mở trang{" "}
+                    <Link href="/bg" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Tổng quan</Link>{" "}
+                    → cài app <em>“Ban giám hiệu”</em>.
+                  </li>
                 </ul>
-                Nếu trước đây đã cài một app chung (TKB Măng Cành), hãy gỡ trước
-                rồi cài lại từ đúng khu vực. App đã cài vẫn xem được thời khóa
-                biểu khi mất mạng (phần đã xem trước đó).
+                Học sinh/phụ huynh chỉ nhìn thấy nút cài đặt của khu vực công
+                khai — nút cài app giáo viên/quản trị chỉ xuất hiện sau khi
+                đăng nhập, nên không thể cài nhầm. Nếu trước đây đã cài một app
+                chung (TKB Măng Cành), hãy gỡ trước rồi cài lại từ đúng khu vực.
+                App đã cài vẫn xem được thời khóa biểu khi mất mạng (phần đã
+                xem trước đó).
               </Step>
             </ol>
           </section>
@@ -486,11 +501,15 @@ export default function GuidePage() {
                   Trên điện thoại có mấy app của trường?
                 </dt>
                 <dd className="mt-1 text-sm text-stone-600">
-                  Ba app riêng: <strong>Sổ tay học sinh</strong> (cài từ trang
-                  /hsv), <strong>Lịch dạy</strong> (cài từ trang /gv) và{" "}
-                  <strong>Quản trị nhà trường</strong> (cài từ trang /admin).
-                  Mỗi app mở thẳng vào đúng khu vực. Nếu đã cài app chung cũ,
-                  hãy gỡ rồi cài lại từ đúng trang.
+                  Mỗi khu vực một app riêng, chỉ mở đúng khu vực của mình:{" "}
+                  <strong>Sổ tay học sinh</strong> (cài từ /hsv),{" "}
+                  <strong>TKB Măng Cành</strong> cho phụ huynh (từ /tkb),{" "}
+                  <strong>Lịch dạy</strong> (từ /gv),{" "}
+                  <strong>Quản trị nhà trường</strong> (từ /admin) và{" "}
+                  <strong>Ban giám hiệu</strong> (từ /bg). Nút cài app giáo
+                  viên/quản trị chỉ hiện sau khi đăng nhập nên học sinh không
+                  thể cài nhầm. Nếu đã cài app chung cũ, hãy gỡ rồi cài lại từ
+                  đúng trang.
                 </dd>
               </div>
             </dl>

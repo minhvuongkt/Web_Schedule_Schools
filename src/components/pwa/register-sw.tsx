@@ -3,17 +3,12 @@
 import { useEffect } from "react";
 
 /**
- * The root layout stays untouched apart from mounting this component, so the
- * manifest <link> is injected here (idempotently) instead of in metadata.
+ * Service-worker registration only. The manifest <link> is NOT injected
+ * globally anymore: per-area manifests are declared by each area's layout
+ * (metadata.manifest) so every installable surface belongs to exactly one
+ * role. Pages without their own manifest (landing, login, guide) are not
+ * installable — that removes the old shared "generic app" install path.
  */
-function ensureManifestLink() {
-  if (document.querySelector('link[rel="manifest"]')) return;
-  const link = document.createElement("link");
-  link.rel = "manifest";
-  link.href = "/manifest.webmanifest";
-  document.head.appendChild(link);
-}
-
 export function RegisterSW() {
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -25,8 +20,6 @@ export function RegisterSW() {
       hostname === "127.0.0.1" ||
       hostname === "[::1]";
     if (protocol !== "https:" && !isLocalhost) return;
-
-    ensureManifestLink();
 
     const onMessage = (event: MessageEvent) => {
       const data = event.data as { type?: string; at?: string } | null;

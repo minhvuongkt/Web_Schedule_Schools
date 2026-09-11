@@ -7,8 +7,10 @@ import { Icon } from "@/components/ui/icon";
 /**
  * PWA install entry point. Uses beforeinstallprompt where available
  * (Chrome/Edge/Android); on iOS Safari — which never fires that event —
- * shows the "Add to Home Screen" walkthrough instead. Renders nothing once
- * the app runs standalone.
+ * shows the "Add to Home Screen" walkthrough. When the browser offers no
+ * prompt (already installed elsewhere, Firefox, desktop Safari…) it still
+ * renders and explains the manual menu path, so the button is always
+ * findable except when the app already runs standalone.
  */
 
 interface BeforeInstallPromptEvent extends Event {
@@ -31,11 +33,13 @@ function isIos(): boolean {
 
 const subscribeNoop = (): (() => void) => () => undefined;
 
+type HelpKind = "ios" | "manual" | null;
+
 export function InstallPrompt({ compact = false }: { compact?: boolean }) {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(
     null,
   );
-  const [showIosHelp, setShowIosHelp] = useState(false);
+  const [help, setHelp] = useState<HelpKind>(null);
   const standalone = useSyncExternalStore(
     subscribeNoop,
     isStandalone,
@@ -52,11 +56,12 @@ export function InstallPrompt({ compact = false }: { compact?: boolean }) {
     return () => window.removeEventListener("beforeinstallprompt", onPrompt);
   }, []);
 
-  if (standalone || (!installEvent && !ios)) return null;
+  // Already installed and running as an app — nothing to offer.
+  if (standalone) return null;
 
   async function install() {
     if (!installEvent) {
-      setShowIosHelp(true);
+      setHelp(ios ? "ios" : "manual");
       return;
     }
     await installEvent.prompt();
@@ -64,16 +69,58 @@ export function InstallPrompt({ compact = false }: { compact?: boolean }) {
     if (choice.outcome === "accepted") setInstallEvent(null);
   }
 
+  const helpPanel =
+    help === "ios" ? (
+      <div className="mt-2 rounded-xl border border-zinc-200 bg-white p-4">
+        <p className="text-sm font-medium text-zinc-800">
+          Cài đặt trên iPhone / iPad
+        </p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-zinc-600">
+          <li>Mở trang này bằng trình duyệt Safari.</li>
+          <li>
+            Nhấn nút <strong>Chia sẻ</strong> (hình vuông có mũi tên hướng
+            lên).
+          </li>
+          <li>
+            Chọn <strong>“Thêm vào Màn hình chính”</strong>.
+          </li>
+        </ol>
+      </div>
+    ) : help === "manual" ? (
+      <div className="mt-2 rounded-xl border border-zinc-200 bg-white p-4">
+        <p className="text-sm font-medium text-zinc-800">
+          Cài đặt trên điện thoại / máy tính
+        </p>
+        <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-zinc-600">
+          <li>
+            Mở menu của trình duyệt (nút <strong>⋮</strong> ở góc trên bên phải
+            với Chrome/Edge).
+          </li>
+          <li>
+            Chọn <strong>“Cài đặt ứng dụng”</strong> (máy tính) hoặc{" "}
+            <strong>“Thêm vào Màn hình chính”</strong> (điện thoại).
+          </li>
+          <li>
+            Nếu không thấy mục đó: ứng dụng có thể đã được cài trước đó — kiểm
+            tra màn hình chính của điện thoại.
+          </li>
+        </ol>
+      </div>
+    ) : null;
+
   if (compact) {
     return (
-      <button
-        type="button"
-        onClick={() => void install()}
-        className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-700/25 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-stone-900/5 transition hover:border-emerald-700/50 hover:bg-emerald-50 active:scale-95"
-      >
-        <Icon name="download" size={16} />
-        Cài đặt ứng dụng
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => void install()}
+          className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-emerald-700/25 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-900 shadow-sm ring-1 ring-stone-900/5 transition hover:border-emerald-700/50 hover:bg-emerald-50 active:scale-95"
+        >
+          <Icon name="download" size={16} />
+          Cài đặt ứng dụng
+        </button>
+        {helpPanel}
+      </div>
     );
   }
 
@@ -97,23 +144,7 @@ export function InstallPrompt({ compact = false }: { compact?: boolean }) {
           Cài đặt
         </button>
       </div>
-      {showIosHelp ? (
-        <div className="mt-2 rounded-xl border border-zinc-200 bg-white p-4">
-          <p className="text-sm font-medium text-zinc-800">
-            Cài đặt trên iPhone / iPad
-          </p>
-          <ol className="mt-2 list-decimal space-y-1 pl-5 text-xs text-zinc-600">
-            <li>Mở trang này bằng trình duyệt Safari.</li>
-            <li>
-              Nhấn nút <strong>Chia sẻ</strong> (hình vuông có mũi tên hướng
-              lên).
-            </li>
-            <li>
-              Chọn <strong>“Thêm vào Màn hình chính”</strong>.
-            </li>
-          </ol>
-        </div>
-      ) : null}
+      {helpPanel}
     </>
   );
 }

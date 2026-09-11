@@ -8,8 +8,8 @@ import { can } from "@/server/domain/roles";
 export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Ban giám hiệu — Măng Cành",
-    // Leadership installs the manager app (same as /admin).
-    manifest: "/admin.webmanifest",
+    // Principals install their own area app (separate from /admin).
+    manifest: "/bg.webmanifest",
   };
 }
 

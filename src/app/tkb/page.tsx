@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { formatWeekLabel } from "@/components/timetable/format";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { Icon } from "@/components/ui/icon";
 import { UiLink } from "@/components/ui/link";
 import { PublicFooter, PublicHeader } from "@/components/site/public-chrome";
@@ -19,6 +20,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Thời khóa biểu — chọn lớp",
+  manifest: "/tkb.webmanifest",
 };
 
 const GRADE_COLORS: Record<number, string> = {
@@ -260,6 +262,10 @@ export default async function TimetableClassSelectorPage({
             )}
           </>
         )}
+
+        <div className="no-print mt-8">
+          <InstallPrompt compact />
+        </div>
 
         <p className="no-print mt-8 text-xs text-zinc-500">
           Thời khóa biểu chỉ hiển thị phiên bản đã được công bố.

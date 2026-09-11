@@ -4,7 +4,7 @@
   "short_name": "Lịch dạy",
   "description": "Lịch dạy, dạy thay và thông báo dành cho giáo viên — Trường PTDTBT TH & THCS Măng Cành.",
   "start_url": "/gv",
-  "scope": "/",
+  "scope": "/gv",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#fafafa",
