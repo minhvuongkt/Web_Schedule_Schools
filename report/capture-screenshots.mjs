@@ -80,6 +80,11 @@ async function capture(opts) {
     await send("Page.navigate", { url }, sessionId);
     await new Promise((r) => setTimeout(r, waitMs));
 
+    if (opts.before) {
+      await send("Runtime.evaluate", { expression: opts.before, returnByValue: true }, sessionId);
+      await new Promise((r) => setTimeout(r, 4000));
+    }
+
     for (const sec of sections) {
       let clip = null;
       if (sec.viewport) {
@@ -245,6 +250,33 @@ await capture({
 await capture({
   url: `${BASE}/admin/thay-giao`, cookie: admin, waitMs: 3600,
   sections: [{ file: "19-substitutions.png", sel: "main", maxH: 760 }],
+});
+
+// ---------- announcements ---------------------------------------------------
+await capture({
+  url: `${BASE}/admin/thong-bao`, cookie: admin, waitMs: 3600,
+  sections: [{ file: "20-announcements.png", sel: "form", maxH: 900 }],
+});
+
+await capture({
+  url: `${BASE}/admin/thong-bao`, cookie: admin, waitMs: 6000,
+  before: `(() => {
+    const t = setInterval(() => {
+      const radio = [...document.querySelectorAll('input[name="audience"]')].find(r => r.value === 'SELECTED');
+      if (radio) radio.click();
+      const picker = document.querySelector('[aria-label="Danh sách người nhận"]');
+      if (picker) {
+        const boxes = [...picker.querySelectorAll('input[type=checkbox]')];
+        if (boxes.length >= 2) {
+          if (!boxes[0].checked) boxes[0].click();
+          if (!boxes[1].checked) boxes[1].click();
+          clearInterval(t);
+        }
+      }
+    }, 350);
+    return 'scheduled';
+  })()`,
+  sections: [{ file: "21-announcement-picker.png", sel: "[aria-label='Danh sách người nhận']", maxH: 560 }],
 });
 
 ws.close();

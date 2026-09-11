@@ -157,10 +157,30 @@ export default function GuidePage() {
                 ra danh sách giáo viên họ Nguyễn Thị.
               </Step>
               <Step n={4} title="Cài app lên màn hình chính (khuyên dùng)">
-                Trên điện thoại, bấm nút{" "}
-                <MenuPath>Cài đặt ứng dụng</MenuPath> ở trang chủ. Sau khi cài,
-                app mở như ứng dụng bình thường và <strong>vẫn xem được thời
-                khóa biểu khi mất mạng</strong> (phần đã xem trước đó).
+                Hệ thống có <strong>3 ứng dụng riêng</strong>, cài từ đúng khu
+                vực để mở thẳng vào việc mình cần:
+                <ul className="mt-1.5 list-disc space-y-1 pl-5">
+                  <li>
+                    <strong>Học sinh:</strong> mở trang{" "}
+                    <Link href="/hsv" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Sổ tay học sinh</Link>,
+                    bấm <MenuPath>Cài đặt ứng dụng</MenuPath> → cài app{" "}
+                    <em>“Sổ tay học sinh”</em>.
+                  </li>
+                  <li>
+                    <strong>Giáo viên:</strong> mở trang{" "}
+                    <Link href="/gv" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Lịch dạy</Link>,
+                    bấm <MenuPath>Cài đặt ứng dụng</MenuPath> trong menu bên trái
+                    → cài app <em>“Lịch dạy”</em>.
+                  </li>
+                  <li>
+                    <strong>Quản trị / ban giám hiệu:</strong> mở trang{" "}
+                    <Link href="/admin" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Xếp thời khóa biểu</Link>{" "}
+                    → cài app <em>“Quản trị nhà trường”</em>.
+                  </li>
+                </ul>
+                Nếu trước đây đã cài một app chung (TKB Măng Cành), hãy gỡ trước
+                rồi cài lại từ đúng khu vực. App đã cài vẫn xem được thời khóa
+                biểu khi mất mạng (phần đã xem trước đó).
               </Step>
             </ol>
           </section>
@@ -196,9 +216,14 @@ export default function GuidePage() {
               <Step n={4} title="Nhận thông báo trên điện thoại">
                 Vào trang <strong>Thông báo</strong>, bấm{" "}
                 <MenuPath>Bật thông báo</MenuPath> và đồng ý khi trình duyệt
-                hỏi. Từ đó mọi thay đổi (đổi lịch, dạy thay, công bố lịch mới)
-                đều được gửi về điện thoại của bạn. Nên cài app (bước 4 phần
-                học sinh) để nhận thông báo đầy đủ nhất.
+                hỏi. Từ đó mọi thay đổi (đổi lịch, dạy thay, công bố lịch mới,
+                thông báo chung của nhà trường) đều được gửi về điện thoại của
+                bạn. Nên cài app (bước 4 phần học sinh) để nhận thông báo đầy
+                đủ nhất. Gặp thông báo cũ: bấm{" "}
+                <MenuPath>Đánh dấu tất cả đã đọc</MenuPath> hoặc{" "}
+                <MenuPath>Xóa tất cả</MenuPath> (có hỏi xác nhận trước khi xóa).
+                Muốn thông báo hiện trên màn hình khóa, xem mục Câu hỏi thường
+                gặp bên dưới.
               </Step>
               <Step n={5} title="In lịch dạy">
                 Mở trang cần in, bấm tổ hợp <Kbd>Ctrl</Kbd> + <Kbd>P</Kbd> —
@@ -323,19 +348,62 @@ export default function GuidePage() {
               D. Quản lý tài khoản &amp; danh mục
             </h3>
             <ol className="mt-3 space-y-4">
-              <Step n={1} title="Tài khoản người dùng">
+              <Step n={1} title="Phân quyền — nhiều vai trò, nhiều tài khoản">
+                Hệ thống có <strong>6 vai trò</strong>; mỗi vai trò thấy menu và
+                quyền khác nhau. Có thể tạo <strong>nhiều tài khoản cho cùng một
+                vai trò</strong> (ví dụ hai cô cùng làm quản trị thời khóa biểu):
+                <ul className="mt-1.5 list-disc space-y-1 pl-5">
+                  <li><strong>Quản trị cấp cao (SUPER_ADMIN)</strong> — toàn quyền, kể cả tài khoản và nhật ký.</li>
+                  <li><strong>Quản trị thời khóa biểu (TIMETABLE_ADMIN)</strong> — xếp lịch, dạy thay, nhập Excel, gửi thông báo; không quản lý tài khoản.</li>
+                  <li><strong>Ban giám hiệu (PRINCIPAL)</strong> — tổng quan, phê duyệt &amp; công bố, xem nhật ký; không sửa từng tiết.</li>
+                  <li><strong>Giáo viên (TEACHER)</strong> — lịch dạy của mình, thông báo.</li>
+                  <li><strong>Học sinh (STUDENT) · Phụ huynh (PARENT)</strong> — xem lịch đã công bố (thường không cần tài khoản).</li>
+                </ul>
+                Hệ thống luôn giữ ít nhất một tài khoản SUPER_ADMIN đang hoạt động
+                và không ai tự khóa/xóa tài khoản của chính mình.
+              </Step>
+              <Step n={2} title="Tài khoản người dùng">
                 Trang <strong>Tài khoản</strong>: tạo tài khoản mới cho giáo
                 viên / cán bộ, gán vai trò, cấp lại mật khẩu (mật khẩu mới chỉ
-                hiện một lần — hãy copy đưa cho người dùng), khóa tài khoản
-                khi cần. Không thể tự khóa tài khoản của chính mình.
+                hiện một lần — hãy copy đưa cho người dùng), khóa tài khoản khi
+                cần. Khi tạo nhầm, bấm <MenuPath>Xóa</MenuPath> — phải gõ đúng
+                tên đăng nhập để xác nhận; tài khoản bị xóa vĩnh viễn nhưng{" "}
+                <strong>nhật ký thao tác vẫn được giữ lại</strong>. Nếu chỉ muốn
+                ngăn đăng nhập tạm thời, hãy dùng <MenuPath>Khóa</MenuPath> thay
+                vì xóa.
               </Step>
-              <Step n={2} title="Danh mục trường học">
+              <Step n={3} title="Danh mục trường học">
                 Trang <strong>Danh mục</strong>: thêm / sửa giáo viên, lớp,
                 môn học, phòng học và phân công giảng dạy.
               </Step>
-              <Step n={3} title="Nhật ký thao tác">
+              <Step n={4} title="Nhật ký thao tác">
                 Trang <strong>Nhật ký</strong> ghi lại ai đã làm gì, lúc nào —
                 dùng để truy vết khi có thắc mắc về lịch.
+              </Step>
+            </ol>
+
+            <h3 className="mt-6 text-sm font-bold uppercase tracking-wide text-stone-500">
+              E. Gửi thông báo cho cả trường
+            </h3>
+            <ol className="mt-3 space-y-4">
+              <Step n={1} title="Soạn và chọn người nhận">
+                Vào trang <strong>Gửi thông báo</strong>, chọn đối tượng:{" "}
+                <MenuPath>Giáo viên &amp; ban giám hiệu</MenuPath>,{" "}
+                <MenuPath>Học sinh &amp; phụ huynh</MenuPath>,{" "}
+                <MenuPath>Tất cả mọi người</MenuPath>, hoặc{" "}
+                <MenuPath>Người nhận được chọn</MenuPath> — khi đó hiện danh sách
+                để tích chọn từng người (có ô tìm nhanh). Nhập tiêu đề, nội dung
+                rồi bấm <MenuPath>Gửi thông báo</MenuPath>. Giáo viên nhận ngay
+                trong mục Thông báo + trên điện thoại; học sinh thấy trong Sổ
+                tay học sinh của lớp mình.
+              </Step>
+              <Step n={2} title="Xem lại &amp; xóa thông báo đã gửi">
+                Phần <strong>Đã gửi gần đây</strong> liệt kê các thông báo đã
+                gửi kèm số người nhận. Tích chọn một hoặc nhiều thông báo rồi
+                bấm <MenuPath>Xóa đã chọn</MenuPath> — thông báo sẽ được xóa{" "}
+                <strong>khỏi hộp thư của toàn bộ người nhận</strong> (kể cả
+                thông báo lớp của học sinh); thao tác có hỏi xác nhận và không
+                thể hoàn tác.
               </Step>
             </ol>
           </section>
@@ -385,6 +453,42 @@ export default function GuidePage() {
                   Được. Mọi trang đều tự co giãn vừa màn hình điện thoại, và
                   app cài được trên cả Android lẫn iPhone (iPhone cài qua
                   “Thêm vào màn hình chính”).
+                </dd>
+              </div>
+              <div className="rounded-xl bg-white p-4 ring-1 ring-stone-900/5">
+                <dt className="text-sm font-semibold text-stone-900">
+                  Thông báo không hiện trên màn hình khóa?
+                </dt>
+                <dd className="mt-1 text-sm text-stone-600">
+                  Trên Android, mở Cài đặt → Ứng dụng → chọn app đã cài (Sổ tay
+                  học sinh / Lịch dạy) → Thông báo → bật và đặt mức{" "}
+                  <strong>Khẩn cấp / Cao</strong>. Đồng thời vào Cài đặt → Màn
+                  hình khóa → Thông báo → cho phép hiện đầy đủ. Máy Xiaomi /
+                  Oppo / Vivo nên bật thêm <em>Tự khởi chạy</em> cho Chrome và
+                  app.
+                </dd>
+              </div>
+              <div className="rounded-xl bg-white p-4 ring-1 ring-stone-900/5">
+                <dt className="text-sm font-semibold text-stone-900">
+                  Đã đóng app mà không thấy thông báo?
+                </dt>
+                <dd className="mt-1 text-sm text-stone-600">
+                  Thông báo đẩy trên Android được chuyển qua Chrome, nên cần
+                  cho Chrome chạy nền: Cài đặt → Ứng dụng → Chrome → Pin →
+                  Không hạn chế (và cho phép dùng dữ liệu nền). Không nên tắt
+                  hoàn toàn Chrome bằng nút “Dừng” trong cài đặt ứng dụng.
+                </dd>
+              </div>
+              <div className="rounded-xl bg-white p-4 ring-1 ring-stone-900/5">
+                <dt className="text-sm font-semibold text-stone-900">
+                  Trên điện thoại có mấy app của trường?
+                </dt>
+                <dd className="mt-1 text-sm text-stone-600">
+                  Ba app riêng: <strong>Sổ tay học sinh</strong> (cài từ trang
+                  /hsv), <strong>Lịch dạy</strong> (cài từ trang /gv) và{" "}
+                  <strong>Quản trị nhà trường</strong> (cài từ trang /admin).
+                  Mỗi app mở thẳng vào đúng khu vực. Nếu đã cài app chung cũ,
+                  hãy gỡ rồi cài lại từ đúng trang.
                 </dd>
               </div>
             </dl>

@@ -322,7 +322,10 @@ export function AnnouncementApp() {
         </fieldset>
 
         {audience === "SELECTED" ? (
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-3">
+          <div
+            aria-label="Danh sách người nhận"
+            className="rounded-lg border border-zinc-200 bg-zinc-50/60 p-3"
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-medium text-zinc-600">
                 Đã chọn {selectedCount} người nhận
