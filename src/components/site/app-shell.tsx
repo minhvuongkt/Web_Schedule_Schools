@@ -263,7 +263,11 @@ export function AppShell({
   );
 
   return (
-    <div className="flex min-h-screen flex-1 bg-zinc-50">
+    // Column, not row: below lg the mobile top bar is an IN-FLOW child —
+    // in a row flex it would render as a narrow left column and squeeze
+    // the page content. At ≥lg the only in-flow child is the content
+    // wrapper (sidebar is fixed), so the direction is irrelevant there.
+    <div className="flex min-h-screen flex-1 flex-col bg-zinc-50">
       {/* Desktop sidebar (hidden in print: fixed elements repeat on every
           printed page) */}
       <aside
@@ -305,9 +309,14 @@ export function AppShell({
         <h1 className="truncate text-sm font-semibold text-zinc-900">{page}</h1>
       </header>
 
-      {/* Content (offset by sidebar on ≥lg; tracks the collapsed width) */}
+      {/* Content (offset by sidebar on ≥lg; tracks the collapsed width).
+          Block, NOT flex: page roots like `mx-auto max-w-7xl` are direct
+          children — as flex items their auto cross margins (mx-auto) would
+          disable stretch and let wide content (min-w tables) size them past
+          the viewport (704px on a 390px phone). Block children always fill
+          the containing block width. */}
       <div
-        className={`flex min-w-0 flex-1 flex-col transition-[padding] duration-200 ${
+        className={`min-w-0 flex-1 transition-[padding] duration-200 ${
           collapsed ? "lg:pl-16" : "lg:pl-60"
         }`}
       >
