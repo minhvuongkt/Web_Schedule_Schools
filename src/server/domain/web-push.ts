@@ -105,11 +105,18 @@ export function buildVapidAuthorization(
 
 // -- RFC 8291 payload encryption ---------------------------------------------
 
-const HKDF_INFO = Buffer.concat([Buffer.from("WebPush: info\0")]);
-
 export interface EncryptedPush {
   /** aes128gcm-coded body: salt(16) | rs(4) | idlen(1) | key(65) | ciphertext. */
   body: Buffer;
+}
+
+export interface EncryptOverrides {
+  /**
+   * Test-only: deterministic inputs to reproduce the RFC 8291 Appendix A
+   * vectors. Production callers omit this.
+   */
+  senderPrivateKey?: Buffer;
+  salt?: Buffer;
 }
 
 /** Encrypts a UTF-8 payload for one subscription (uaPublic + auth secret). */
@@ -117,6 +124,7 @@ export function encryptPushPayload(
   payload: string,
   p256dhBase64Url: string,
   authBase64Url: string,
+  overrides: EncryptOverrides = {},
 ): EncryptedPush {
   const uaPublic = Buffer.from(p256dhBase64Url, "base64url");
   const authSecret = Buffer.from(authBase64Url, "base64url");
@@ -128,17 +136,33 @@ export function encryptPushPayload(
   }
 
   const ecdh = createECDH("prime256v1");
-  ecdh.generateKeys();
+  if (overrides.senderPrivateKey) {
+    ecdh.setPrivateKey(overrides.senderPrivateKey);
+  } else {
+    ecdh.generateKeys();
+  }
   const asPublic = ecdh.getPublicKey();
   const sharedSecret = ecdh.computeSecret(uaPublic);
 
-  // RFC 8291: PRK = HKDF(salt=auth, ikm=shared); CEK and NONCE both expand
-  // with info = "WebPush: info\0" || uaPublic || asPublic.
-  const info = Buffer.concat([HKDF_INFO, uaPublic, asPublic]);
-  const cek = Buffer.from(hkdfSync("sha256", sharedSecret, authSecret, info, 16));
-  const nonce = Buffer.from(hkdfSync("sha256", sharedSecret, authSecret, info, 12));
+  // RFC 8291 §3.4 — two-step HKDF:
+  //   IKM = HKDF(salt=auth_secret, ikm=ecdh_secret, info="WebPush: info\0"
+  //              || ua_public || as_public, 32)
+  //   PRK = HKDF-Extract(salt=header salt, IKM)
+  //   CEK   = HKDF-Expand(PRK, "Content-Encoding: aes128gcm\0", 16)
+  //   NONCE = HKDF-Expand(PRK, "Content-Encoding: nonce\0", 12)
+  const keyInfo = Buffer.concat([Buffer.from("WebPush: info\0"), uaPublic, asPublic]);
+  const ikm = Buffer.from(hkdfSync("sha256", sharedSecret, authSecret, keyInfo, 32));
+  const salt = overrides.salt ?? randomBytes(16);
+  const cek = Buffer.from(
+    hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: aes128gcm\0"), 16),
+  );
+  const nonce = Buffer.from(
+    hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: nonce\0"), 12),
+  );
 
-  const plaintext = Buffer.from(payload, "utf8");
+  // RFC 8188/8291: one record; the final padding delimiter 0x02 is mandatory
+  // (browsers discard records whose delimiter is missing or not 0x02).
+  const plaintext = Buffer.concat([Buffer.from(payload, "utf8"), Buffer.from([0x02])]);
   if (plaintext.length > 4096 - 86 - 16) {
     throw new Error("Push payload too large (max ~4KB)");
   }
@@ -150,7 +174,7 @@ export function encryptPushPayload(
   ]);
 
   const body = Buffer.concat([
-    randomBytes(16), // salt
+    salt,
     Buffer.from([0x00, 0x00, 0x10, 0x00]), // rs = 4096
     Buffer.from([65]), // idlen
     asPublic,

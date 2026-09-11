@@ -16,19 +16,34 @@ import {
   sendWebPush,
 } from "@/server/domain/web-push";
 
-/** RFC 8291 receiver side: recompute CEK/nonce and decrypt the aes128gcm body. */
+/** RFC 8291 receiver side: two-step HKDF from the header salt, then decrypt. */
 function receiverDecrypt(body: Buffer, uaKeys: ReturnType<typeof createECDH>, auth: Buffer) {
+  const salt = body.subarray(0, 16);
   const asPublic = body.subarray(21, 21 + body[20]);
   const ciphertext = body.subarray(21 + body[20]);
   const shared = uaKeys.computeSecret(asPublic);
-  const info = Buffer.concat([Buffer.from("WebPush: info\0"), uaKeys.getPublicKey(), asPublic]);
-  const cek = Buffer.from(hkdfSync("sha256", shared, auth, info, 16));
-  const nonce = Buffer.from(hkdfSync("sha256", shared, auth, info, 12));
+  const keyInfo = Buffer.concat([
+    Buffer.from("WebPush: info\0"),
+    uaKeys.getPublicKey(),
+    asPublic,
+  ]);
+  const ikm = Buffer.from(hkdfSync("sha256", shared, auth, keyInfo, 32));
+  const cek = Buffer.from(
+    hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: aes128gcm\0"), 16),
+  );
+  const nonce = Buffer.from(
+    hkdfSync("sha256", ikm, salt, Buffer.from("Content-Encoding: nonce\0"), 12),
+  );
   const tag = ciphertext.subarray(ciphertext.length - 16);
   const data = ciphertext.subarray(0, ciphertext.length - 16);
   const decipher = createDecipheriv("aes-128-gcm", cek, nonce, { authTagLength: 16 });
   decipher.setAuthTag(tag);
-  return Buffer.concat([decipher.update(data), decipher.final()]).toString("utf8");
+  const padded = Buffer.concat([decipher.update(data), decipher.final()]);
+  // RFC 8188: strip zero padding and the final-record delimiter octet (0x02).
+  let end = padded.length;
+  while (end > 0 && padded[end - 1] === 0) end -= 1;
+  if (end === 0 || padded[end - 1] !== 0x02) throw new Error("invalid padding delimiter");
+  return padded.subarray(0, end - 1).toString("utf8");
 }
 
 describe("generateVapidKeys", () => {
@@ -110,10 +125,33 @@ describe("encryptPushPayload", () => {
       ua.getPublicKey("base64url"),
       auth.toString("base64url"),
     );
-    // aes128gcm layout: salt(16) rs(4) idlen(1) key(65) ciphertext(+16 tag).
-    expect(body).toHaveLength(16 + 4 + 1 + 65 + Buffer.byteLength(message) + 16);
+    // aes128gcm layout: salt(16) rs(4) idlen(1) key(65) ciphertext(+16 tag);
+    // ciphertext = plaintext + 0x02 delimiter + AEAD tag.
+    expect(body).toHaveLength(16 + 4 + 1 + 65 + Buffer.byteLength(message) + 1 + 16);
     const decrypted = receiverDecrypt(body, ua, auth);
     expect(JSON.parse(decrypted)).toEqual({ title: "Thông báo", body: "Bạn có tiết dạy thay." });
+  });
+
+  it("matches the RFC 8291 Appendix A test vectors octet-for-octet", () => {
+    // https://www.rfc-editor.org/rfc/rfc8291#appendix-A
+    const { body } = encryptPushPayload(
+      "When I grow up, I want to be a watermelon",
+      "BCVxsr7N_eNgVRqvHtD0zTZsEc6-VV-JvLexhqUzORcxaOzi6-AYWXvTBHm4bjyPjs7Vd8pZGH6SRpkNtoIAiw4",
+      "BTBZMqHH6r4Tts7J_aSIgg",
+      {
+        senderPrivateKey: Buffer.from(
+          "yfWPiYE-n46HLnH0KqZOF1fJJU3MYrct3AELtAQ-oRw",
+          "base64url",
+        ),
+        salt: Buffer.from("DGv6ra1nlYgDCS1FRnbzlw", "base64url"),
+      },
+    );
+    expect(body.subarray(0, 86).toString("base64url")).toBe(
+      "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A8",
+    );
+    expect(body.subarray(86).toString("base64url")).toBe(
+      "8pfeW0KbunFT06SuDKoJH9Ql87S1QUrdirN6GcG7sFz1y1sqLgVi1VhjVkHsUoEsbI_0LpXMuGvnzQ",
+    );
   });
 
   it("rejects a malformed p256dh key", () => {
