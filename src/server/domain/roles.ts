@@ -29,6 +29,7 @@ export const PERMISSIONS = [
   "import:excel",
   "export:excel",
   "export:pdf",
+  "notifications:send", // broadcast announcements from the admin area
   "users:manage",
   "audit:read",
 ] as const;
@@ -49,6 +50,7 @@ const MATRIX: Record<Role, readonly Permission[]> = {
     "import:excel",
     "export:excel",
     "export:pdf",
+    "notifications:send",
   ],
   PRINCIPAL: [
     "timetable:read-published",

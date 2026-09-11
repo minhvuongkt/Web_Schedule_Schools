@@ -34,6 +34,7 @@ const ENTITY_TYPES: { value: string; label: string }[] = [
   { value: "SubjectComponent", label: "Phân môn (danh mục)" },
   { value: "Room", label: "Phòng học (danh mục)" },
   { value: "User", label: "Người dùng" },
+  { value: "Notification", label: "Thông báo" },
   { value: "Export", label: "Xuất dữ liệu" },
 ];
 
@@ -55,6 +56,7 @@ const ACTION_META: Record<string, { label: string; badgeClass: string }> = {
   ROLLBACK: { label: "Khôi phục", badgeClass: "bg-blue-100 text-blue-800" },
   SUBSTITUTE: { label: "Dạy thay", badgeClass: "bg-blue-100 text-blue-800" },
   MAKEUP: { label: "Bổ sung tiết", badgeClass: "bg-blue-100 text-blue-800" },
+  NOTIFY: { label: "Gửi thông báo", badgeClass: "bg-indigo-100 text-indigo-800" },
 };
 
 const FALLBACK_ACTION_META = { label: "", badgeClass: "bg-zinc-200 text-zinc-700" };

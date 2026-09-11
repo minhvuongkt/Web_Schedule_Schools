@@ -402,3 +402,66 @@ export async function resetUserPassword(
     return { user: toRow(user), newPassword };
   });
 }
+
+/**
+ * Permanently deletes an account. Sessions, push subscriptions and
+ * notification recipients are removed, teacher/student links are unlinked,
+ * and the audit log survives (no FK on actorId). Same safety rails as
+ * deactivation: no self-delete and at least one active SUPER_ADMIN remains.
+ */
+export async function deleteUser(id: string, actor: SessionUser): Promise<void> {
+  assertManage(actor);
+  await prisma.$transaction(async (t) => {
+    const before = await t.user.findUnique({ where: { id }, select: USER_COLUMNS });
+    if (!before) {
+      throw new MutationError("NOT_FOUND", "Không tìm thấy tài khoản.", {}, 404);
+    }
+    if (before.id === actor.id) {
+      throw new MutationError(
+        "SELF_DELETE",
+        "Bạn không thể xóa tài khoản của chính mình.",
+        {},
+        409,
+      );
+    }
+    if (before.role === "SUPER_ADMIN" && before.isActive) {
+      const otherActiveSuperAdmins = await t.user.count({
+        where: { role: "SUPER_ADMIN", isActive: true, id: { not: id } },
+      });
+      if (otherActiveSuperAdmins === 0) {
+        throw new MutationError(
+          "LAST_SUPER_ADMIN",
+          "Hệ thống phải duy trì ít nhất một SUPER_ADMIN đang hoạt động.",
+          {},
+          409,
+        );
+      }
+    }
+
+    // One-sided links live on Teacher/Student — unlink before the delete.
+    await t.teacher.updateMany({ where: { userId: id }, data: { userId: null } });
+    await t.student.updateMany({ where: { userId: id }, data: { userId: null } });
+    // Rows owned by the account must go with it.
+    await t.authSession.deleteMany({ where: { userId: id } });
+    await t.pushSubscription.deleteMany({ where: { userId: id } });
+    await t.notificationRecipient.deleteMany({ where: { userId: id } });
+    await t.user.delete({ where: { id } });
+
+    await audit(
+      t,
+      actor,
+      "DELETE",
+      id,
+      {
+        username: before.username,
+        displayName: before.displayName,
+        email: before.email,
+        role: before.role,
+        teacherId: before.teacher?.id ?? null,
+        isActive: before.isActive,
+      },
+      null,
+      "account deleted",
+    );
+  });
+}

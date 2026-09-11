@@ -48,6 +48,7 @@ const NAV_SECTIONS: { title: string; items: NavItem[] }[] = [
       { href: "/admin", label: "Xếp thời khóa biểu", icon: "calendar", permission: "timetable:read-all" },
       { href: "/admin/thay-giao", label: "Dạy thay & dạy bù", icon: "refresh-cw", permission: "timetable:write" },
       { href: "/admin/danh-muc", label: "Danh mục trường học", icon: "book-open", permission: "assignments:manage" },
+      { href: "/admin/thong-bao", label: "Gửi thông báo", icon: "megaphone", permission: "notifications:send" },
       { href: "/admin/tai-khoan", label: "Tài khoản người dùng", icon: "key-round", permission: "users:manage" },
       { href: "/admin/import", label: "Nhập từ Excel", icon: "file-spreadsheet", permission: "import:excel" },
       { href: "/admin/audit", label: "Nhật ký thao tác", icon: "history-icon", permission: "audit:read" },

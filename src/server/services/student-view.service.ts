@@ -197,6 +197,7 @@ const CLASS_NOTIFICATION_TYPES = new Set([
   "ROOM_CHANGED",
   "LESSON_CANCELLED",
   "MAKEUP_LESSON_CREATED",
+  "CLASS_ANNOUNCEMENT",
 ]);
 
 export async function getClassNotifications(

@@ -19,6 +19,7 @@ const TYPE_LABELS_VI: Record<string, string> = {
   LESSON_CANCELLED: "Hủy tiết học",
   SUBSTITUTION_ASSIGNED: "Được phân công dạy thay",
   MAKEUP_LESSON_CREATED: "Bổ sung tiết học",
+  ANNOUNCEMENT: "Thông báo chung",
   SYSTEM: "Hệ thống",
 };
 

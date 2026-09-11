@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { requireApiUser, mutationErrorResponse, type Params } from "@/server/api/timetable-api";
-import { updateUser } from "@/server/services/user.service";
+import { deleteUser, updateUser } from "@/server/services/user.service";
 
 /** PATCH /api/users/:id  {displayName?, email?, role?, teacherId?, isActive?} */
 export async function PATCH(
@@ -46,6 +46,22 @@ export async function PATCH(
         auth.user,
       ),
     );
+  } catch (error) {
+    return mutationErrorResponse(error) ?? internal(error);
+  }
+}
+
+/** DELETE /api/users/:id — permanently remove an account (users:manage). */
+export async function DELETE(
+  _request: Request,
+  { params }: Params,
+): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  const { id } = await params;
+  try {
+    await deleteUser(id, auth.user);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return mutationErrorResponse(error) ?? internal(error);
   }

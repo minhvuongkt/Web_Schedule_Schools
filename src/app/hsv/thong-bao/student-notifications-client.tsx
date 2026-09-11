@@ -16,6 +16,7 @@ const TYPE_META: Record<string, { label: string; cls: string }> = {
   ROOM_CHANGED: { label: "Đổi phòng", cls: "bg-zinc-200 text-zinc-700" },
   LESSON_CANCELLED: { label: "Hủy tiết", cls: "bg-red-100 text-red-800" },
   MAKEUP_LESSON_CREATED: { label: "Dạy bù", cls: "bg-blue-100 text-blue-800" },
+  CLASS_ANNOUNCEMENT: { label: "Thông báo chung", cls: "bg-indigo-100 text-indigo-800" },
 };
 
 function formatTime(iso: string): string {

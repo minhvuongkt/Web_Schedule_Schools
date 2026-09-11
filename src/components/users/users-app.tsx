@@ -120,6 +120,7 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
   const [saving, setSaving] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<UserRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<UserRow | null>(null);
   const [resetResult, setResetResult] = useState<{ username: string; password: string } | null>(
     null,
   );
@@ -240,11 +241,11 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                   <p className="mt-2 text-xs text-zinc-400">
                     Đăng nhập cuối: {row.lastLoginAt ? formatDate(row.lastLoginAt) : "chưa bao giờ"}
                   </p>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setEditTarget(row)}
-                      className="min-h-11 flex-1 rounded-lg border border-zinc-300 px-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 active:scale-95"
+                      className="min-h-11 rounded-lg border border-zinc-300 px-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 active:scale-95"
                     >
                       Sửa
                     </button>
@@ -259,7 +260,7 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                           setResetResult({ username: row.username, password: result.newPassword });
                         }, "Đã đặt lại mật khẩu.")
                       }
-                      className="min-h-11 flex-1 rounded-lg border border-amber-200 px-2.5 text-xs font-medium text-amber-700 transition-colors hover:border-amber-400 active:scale-95"
+                      className="min-h-11 rounded-lg border border-amber-200 px-2.5 text-xs font-medium text-amber-700 transition-colors hover:border-amber-400 active:scale-95"
                     >
                       Đặt lại mật khẩu
                     </button>
@@ -275,13 +276,22 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                           await load();
                         }, row.isActive ? "Đã khóa tài khoản." : "Đã mở lại tài khoản.")
                       }
-                      className={`min-h-11 flex-1 rounded-lg border px-2.5 text-xs font-medium transition-colors active:scale-95 ${
+                      className={`min-h-11 rounded-lg border px-2.5 text-xs font-medium transition-colors active:scale-95 ${
                         row.isActive
                           ? "border-rose-200 text-rose-700 hover:border-rose-400"
                           : "border-emerald-200 text-emerald-700 hover:border-emerald-400"
                       }`}
                     >
                       {row.isActive ? "Khóa" : "Mở"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => setDeleteTarget(row)}
+                      className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-2.5 text-xs font-semibold text-rose-700 transition-colors hover:border-rose-500 active:scale-95"
+                    >
+                      <Icon name="trash-2" size={14} />
+                      Xóa
                     </button>
                   </div>
                 </li>
@@ -384,6 +394,15 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                           >
                             {row.isActive ? "Khóa" : "Mở"}
                           </button>
+                          <button
+                            type="button"
+                            disabled={saving}
+                            onClick={() => setDeleteTarget(row)}
+                            className="inline-flex items-center gap-1 rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:border-rose-500"
+                          >
+                            <Icon name="trash-2" size={13} />
+                            Xóa
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -398,7 +417,8 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
           Khóa tài khoản sẽ đăng xuất ngay lập tức mọi phiên của người dùng.
           Hệ thống luôn duy trì ít nhất một SUPER_ADMIN đang hoạt động. Tài
           khoản bị khóa không bị xóa: lịch sử thao tác và thông báo vẫn được
-          bảo toàn.
+          bảo toàn. Xóa tài khoản là vĩnh viễn và không thể hoàn tác — chỉ nên
+          dùng khi tài khoản được tạo nhầm.
         </p>
       </div>
 
@@ -436,6 +456,21 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
               setEditTarget(null);
               await load();
             }, "Đã lưu thông tin tài khoản.")
+          }
+        />
+      ) : null}
+
+      {deleteTarget ? (
+        <UserDeleteModal
+          target={deleteTarget}
+          saving={saving}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() =>
+            run(async () => {
+              await api(`/api/users/${deleteTarget.id}`, { method: "DELETE" });
+              setDeleteTarget(null);
+              await load();
+            }, "Đã xóa tài khoản vĩnh viễn.")
           }
         />
       ) : null}
@@ -479,6 +514,70 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
 }
 
 // ---------------------------------------------------------------------------
+
+function UserDeleteModal({
+  target,
+  saving,
+  onClose,
+  onConfirm,
+}: {
+  target: UserRow;
+  saving: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const [typed, setTyped] = useState("");
+  const confirmed = typed.trim() === target.username;
+
+  return (
+    <Modal title="Xóa tài khoản" onClose={onClose}>
+      <div className="space-y-4">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <p className="font-semibold">Thao tác này không thể hoàn tác.</p>
+          <p className="mt-1">
+            Tài khoản <span className="font-mono font-semibold">{target.username}</span> (
+            {target.displayName}) sẽ bị xóa vĩnh viễn: mọi phiên đăng nhập và đăng
+            ký thông báo đẩy bị thu hồi. Nhật ký thao tác vẫn được giữ lại.
+          </p>
+          <p className="mt-1">
+            Nếu chỉ muốn ngăn đăng nhập tạm thời, hãy dùng{" "}
+            <span className="font-semibold">Khóa</span> thay vì xóa.
+          </p>
+        </div>
+        <Field
+          label={`Nhập "${target.username}" để xác nhận`}
+          hint="Chính xác từng ký tự, phân biệt chữ thường."
+        >
+          <input
+            className={inputClass}
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+            autoFocus
+          />
+        </Field>
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            disabled={!confirmed || saving}
+            onClick={onConfirm}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="trash-2" size={15} />
+            Xóa vĩnh viễn
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
 
 interface UserFormData {
   username: string;

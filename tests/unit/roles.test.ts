@@ -42,6 +42,14 @@ describe("RBAC matrix", () => {
     expect(can("TEACHER", "audit:read")).toBe(false);
   });
 
+  it("only the two admin roles broadcast announcements", () => {
+    expect(can("SUPER_ADMIN", "notifications:send")).toBe(true);
+    expect(can("TIMETABLE_ADMIN", "notifications:send")).toBe(true);
+    for (const role of ["PRINCIPAL", "TEACHER", "STUDENT", "PARENT"] as Role[]) {
+      expect(can(role, "notifications:send")).toBe(false);
+    }
+  });
+
   it("everyone can read published timetables", () => {
     for (const role of [
       "SUPER_ADMIN",
