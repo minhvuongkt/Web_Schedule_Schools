@@ -6,6 +6,7 @@ import { z } from "zod";
 import { rateLimit } from "@/server/api/rate-limit";
 import {
   SESSION_COOKIE,
+  homePathForRole,
   login,
   logout,
   sessionCookieOptions,
@@ -61,13 +62,14 @@ export async function loginAction(
   const store = await cookies();
   store.set(SESSION_COOKIE, token, sessionCookieOptions());
 
+  // First login for this account: the wizard (email + own password) must be
+  // completed before any protected page will render.
+  if (!user.onboardingCompleted) {
+    redirect("/bat-dau");
+  }
+
   const rawNext = String(formData.get("next") ?? "");
-  const fallback =
-    user.role === "TIMETABLE_ADMIN" || user.role === "SUPER_ADMIN"
-      ? "/admin"
-      : user.role === "PRINCIPAL"
-        ? "/bg"
-        : "/gv";
+  const fallback = homePathForRole(user.role);
   const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : fallback;
   redirect(next);
 }

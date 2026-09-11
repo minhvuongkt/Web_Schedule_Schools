@@ -529,6 +529,10 @@ model User {
   displayName  String
   role         String   @default("TEACHER") // SUPER_ADMIN|TIMETABLE_ADMIN|PRINCIPAL|TEACHER|STUDENT|PARENT
   isActive     Boolean  @default(true)
+  /// Null until the first-login wizard (email + own password) is completed.
+  onboardingCompletedAt DateTime?
+  /// Set when the user confirmed their email in the wizard / account page.
+  emailVerifiedAt       DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

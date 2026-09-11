@@ -26,28 +26,47 @@ export interface SessionUser {
   id: string;
   username: string;
   displayName: string;
+  email: string | null;
   role: Role;
   teacherId: string | null;
+  /** False until the first-login wizard (email + own password) is done. */
+  onboardingCompleted: boolean;
 }
 
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
+/** SHA-256 of a raw session token — the value stored in the database. */
+export function sessionTokenHash(token: string): string {
+  return sha256(token);
+}
+
+/** Landing page for a role after login / finishing onboarding. */
+export function homePathForRole(role: Role): string {
+  if (role === "TIMETABLE_ADMIN" || role === "SUPER_ADMIN") return "/admin";
+  if (role === "PRINCIPAL") return "/bg";
+  return "/gv";
+}
+
 function sanitizeUser(user: {
   id: string;
   username: string;
   displayName: string;
+  email: string | null;
   role: string;
   isActive: boolean;
+  onboardingCompletedAt: Date | null;
   teacher: { id: string } | null;
 }): SessionUser {
   return {
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    email: user.email,
     role: isRole(user.role) ? user.role : "TEACHER",
     teacherId: user.teacher?.id ?? null,
+    onboardingCompleted: user.onboardingCompletedAt !== null,
   };
 }
 
@@ -55,9 +74,11 @@ const USER_SELECT = {
   id: true,
   username: true,
   displayName: true,
+  email: true,
   role: true,
   isActive: true,
   passwordHash: true,
+  onboardingCompletedAt: true,
   teacher: { select: { id: true } },
 } as const;
 

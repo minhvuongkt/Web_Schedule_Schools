@@ -22,11 +22,19 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   return resolveSessionUser(token);
 }
 
-/** Requires any authenticated user; redirects to /dang-nhap otherwise. */
+/**
+ * Requires any authenticated user; redirects to /dang-nhap otherwise.
+ * Users who have not finished the first-login wizard (email + own password)
+ * are redirected to /bat-dau from every protected page; the wizard itself
+ * uses getCurrentUser so there is no loop.
+ */
 export async function requireUser(returnTo = "/gv"): Promise<SessionUser> {
   const user = await getCurrentUser();
   if (!user) {
     redirect(`/dang-nhap?next=${encodeURIComponent(returnTo)}`);
+  }
+  if (!user.onboardingCompleted) {
+    redirect("/bat-dau");
   }
   return user;
 }

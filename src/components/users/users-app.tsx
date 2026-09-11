@@ -111,6 +111,19 @@ function StatusBadge({ isActive }: { isActive: boolean }) {
   );
 }
 
+function OnboardingBadge({ completed }: { completed: boolean }) {
+  if (completed) return null;
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800"
+      title="Chưa hoàn tất thiết lập lần đầu: người dùng sẽ nhập email và đặt mật khẩu riêng ở lần đăng nhập tới."
+    >
+      <Icon name="key-round" size={10} />
+      Chưa thiết lập
+    </span>
+  );
+}
+
 export function UsersApp({ user }: { user: { displayName: string; role: Role } }) {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
@@ -228,7 +241,10 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                       </p>
                       <p className="mt-0.5 font-mono text-xs text-zinc-500">{row.username}</p>
                     </div>
-                    <StatusBadge isActive={row.isActive} />
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge isActive={row.isActive} />
+                      <OnboardingBadge completed={row.onboardingCompleted} />
+                    </div>
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <RoleBadge role={row.role} />
@@ -258,7 +274,7 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                             { method: "POST", body: JSON.stringify({}) },
                           );
                           setResetResult({ username: row.username, password: result.newPassword });
-                        }, "Đã đặt lại mật khẩu.")
+                        }, "Đã đặt lại mật khẩu — người dùng sẽ tự thiết lập lại ở lần đăng nhập tới.")
                       }
                       className="min-h-11 rounded-lg border border-amber-200 px-2.5 text-xs font-medium text-amber-700 transition-colors hover:border-amber-400 active:scale-95"
                     >
@@ -344,7 +360,10 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                         {row.lastLoginAt ? formatDate(row.lastLoginAt) : "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <StatusBadge isActive={row.isActive} />
+                        <div className="flex flex-col items-start gap-1">
+                          <StatusBadge isActive={row.isActive} />
+                          <OnboardingBadge completed={row.onboardingCompleted} />
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-1.5">
@@ -368,7 +387,7 @@ export function UsersApp({ user }: { user: { displayName: string; role: Role } }
                                   username: row.username,
                                   password: result.newPassword,
                                 });
-                              }, "Đã đặt lại mật khẩu.")
+                              }, "Đã đặt lại mật khẩu — người dùng sẽ tự thiết lập lại ở lần đăng nhập tới.")
                             }
                             className="rounded-md border border-amber-200 px-2.5 py-1.5 text-xs font-medium text-amber-700 transition-colors hover:border-amber-400"
                           >

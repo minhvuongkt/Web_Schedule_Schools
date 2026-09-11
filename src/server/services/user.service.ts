@@ -86,6 +86,7 @@ const USER_COLUMNS = {
   displayName: true,
   role: true,
   isActive: true,
+  onboardingCompletedAt: true,
   createdAt: true,
   teacher: { select: { id: true, code: true, fullName: true } },
   authSessions: {
@@ -102,6 +103,8 @@ export interface UserRow {
   displayName: string;
   role: string;
   isActive: boolean;
+  /** False while the first-login wizard (email + own password) is pending. */
+  onboardingCompleted: boolean;
   createdAt: string;
   teacher: { id: string; code: string; fullName: string } | null;
   lastLoginAt: string | null;
@@ -114,6 +117,7 @@ function toRow(user: {
   displayName: string;
   role: string;
   isActive: boolean;
+  onboardingCompletedAt: Date | null;
   createdAt: Date;
   teacher: { id: string; code: string; fullName: string } | null;
   authSessions: { createdAt: Date }[];
@@ -125,6 +129,7 @@ function toRow(user: {
     displayName: user.displayName,
     role: user.role,
     isActive: user.isActive,
+    onboardingCompleted: user.onboardingCompletedAt !== null,
     createdAt: user.createdAt.toISOString(),
     teacher: user.teacher,
     lastLoginAt:
@@ -395,10 +400,16 @@ export async function resetUserPassword(
     }
     await t.user.update({
       where: { id },
-      data: { passwordHash: hashPassword(newPassword) },
+      data: {
+        passwordHash: hashPassword(newPassword),
+        // The user must set their own password (+ confirm email) again at the
+        // next login: the admin knows this temporary password.
+        onboardingCompletedAt: null,
+        emailVerifiedAt: null,
+      },
     });
     await t.authSession.deleteMany({ where: { userId: id } });
-    await audit(t, actor, "UPDATE", id, null, { username: user.username }, "password reset");
+    await audit(t, actor, "UPDATE", id, null, { username: user.username }, "password reset — onboarding restarted");
     return { user: toRow(user), newPassword };
   });
 }
