@@ -1,5 +1,5 @@
 -- =============================================================================
--- database/schema.sql — schema-only export of the school_timetable database
+-- database/schema.sql â€” schema-only export of the school_timetable database
 -- (structure, NO data).
 --
 -- Generated from prisma/migrations (source of truth) via:
@@ -8,8 +8,7 @@
 --
 -- Restore into an empty PostgreSQL database:
 --   psql -U <user> -d school_timetable -f database/schema.sql
--- (For the app itself prefer 
-px prisma migrate deploy — see
+-- (For the app itself prefer `npx prisma migrate deploy` â€” see
 -- docs/deployment.md; this file is for reference/manual provisioning.)
 -- =============================================================================
 -- CreateSchema
@@ -760,7 +759,7 @@ ALTER TABLE "AuthSession" ADD CONSTRAINT "AuthSession_userId_fkey" FOREIGN KEY (
 
 
 -- ---------------------------------------------------------------------------
--- Partial unique indexes (raw SQL migrations only — not expressible in
+-- Partial unique indexes (raw SQL migrations only â€” not expressible in
 -- schema.prisma; included here so this file fully describes the database).
 -- A slot holds at most one ACTIVE lesson; CANCELLED entries free the slot.
 -- ---------------------------------------------------------------------------
