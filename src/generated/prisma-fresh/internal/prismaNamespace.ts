@@ -428,6 +428,7 @@ export const ModelName = {
   User: 'User',
   PushSubscription: 'PushSubscription',
   AuthSession: 'AuthSession',
+  VerificationCode: 'VerificationCode',
   AuditLog: 'AuditLog'
 } as const
 
@@ -444,7 +445,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "school" | "schoolYear" | "semester" | "week" | "academicDay" | "sessionConfig" | "period" | "department" | "teacher" | "teacherAlias" | "teacherAvailability" | "student" | "class" | "studentClassMembership" | "subject" | "subjectComponent" | "room" | "teachingAssignment" | "teachingRequirement" | "workloadPolicy" | "timetableVersion" | "timetableEntry" | "substitution" | "makeupLesson" | "holiday" | "specialEvent" | "notification" | "notificationRecipient" | "user" | "pushSubscription" | "authSession" | "auditLog"
+    modelProps: "school" | "schoolYear" | "semester" | "week" | "academicDay" | "sessionConfig" | "period" | "department" | "teacher" | "teacherAlias" | "teacherAvailability" | "student" | "class" | "studentClassMembership" | "subject" | "subjectComponent" | "room" | "teachingAssignment" | "teachingRequirement" | "workloadPolicy" | "timetableVersion" | "timetableEntry" | "substitution" | "makeupLesson" | "holiday" | "specialEvent" | "notification" | "notificationRecipient" | "user" | "pushSubscription" | "authSession" | "verificationCode" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -2742,6 +2743,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    VerificationCode: {
+      payload: Prisma.$VerificationCodePayload<ExtArgs>
+      fields: Prisma.VerificationCodeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.VerificationCodeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.VerificationCodeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>
+        }
+        findFirst: {
+          args: Prisma.VerificationCodeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.VerificationCodeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>
+        }
+        findMany: {
+          args: Prisma.VerificationCodeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>[]
+        }
+        create: {
+          args: Prisma.VerificationCodeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>
+        }
+        createMany: {
+          args: Prisma.VerificationCodeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.VerificationCodeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>[]
+        }
+        delete: {
+          args: Prisma.VerificationCodeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>
+        }
+        update: {
+          args: Prisma.VerificationCodeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>
+        }
+        deleteMany: {
+          args: Prisma.VerificationCodeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.VerificationCodeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.VerificationCodeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>[]
+        }
+        upsert: {
+          args: Prisma.VerificationCodeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$VerificationCodePayload>
+        }
+        aggregate: {
+          args: Prisma.VerificationCodeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateVerificationCode>
+        }
+        groupBy: {
+          args: Prisma.VerificationCodeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerificationCodeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.VerificationCodeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.VerificationCodeCountAggregateOutputType> | number
+        }
+      }
+    }
     AuditLog: {
       payload: Prisma.$AuditLogPayload<ExtArgs>
       fields: Prisma.AuditLogFieldRefs
@@ -3272,6 +3347,21 @@ export const AuthSessionScalarFieldEnum = {
 export type AuthSessionScalarFieldEnum = (typeof AuthSessionScalarFieldEnum)[keyof typeof AuthSessionScalarFieldEnum]
 
 
+export const VerificationCodeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  email: 'email',
+  purpose: 'purpose',
+  codeHash: 'codeHash',
+  attempts: 'attempts',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type VerificationCodeScalarFieldEnum = (typeof VerificationCodeScalarFieldEnum)[keyof typeof VerificationCodeScalarFieldEnum]
+
+
 export const AuditLogScalarFieldEnum = {
   id: 'id',
   actorId: 'actorId',
@@ -3593,6 +3683,7 @@ export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
   pushSubscription?: Prisma.PushSubscriptionOmit
   authSession?: Prisma.AuthSessionOmit
+  verificationCode?: Prisma.VerificationCodeOmit
   auditLog?: Prisma.AuditLogOmit
 }
 

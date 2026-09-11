@@ -203,6 +203,12 @@ const ICONS: Record<string, IconPath> = {
     },
     { d: "m21.854 2.147-10.94 10.939" },
   ],
+  mail: [
+    {
+      d: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+    },
+    { d: "m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" },
+  ],
 };
 
 export type IconName = keyof typeof ICONS | (string & {});

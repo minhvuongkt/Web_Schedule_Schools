@@ -173,6 +173,11 @@ export type PushSubscription = Prisma.PushSubscriptionModel
  */
 export type AuthSession = Prisma.AuthSessionModel
 /**
+ * Model VerificationCode
+ * 
+ */
+export type VerificationCode = Prisma.VerificationCodeModel
+/**
  * Model AuditLog
  * 
  */

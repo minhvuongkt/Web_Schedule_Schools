@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { loginAction } from "./actions";
 import { Icon } from "@/components/ui/icon";
@@ -40,9 +41,17 @@ export function LoginForm({ initialNext }: LoginFormProps) {
         className="mt-1 block w-full rounded-lg border border-stone-300 px-3 py-2.5 text-sm text-stone-900 transition duration-200 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600"
       />
 
-      <label htmlFor="password" className="mt-4 block text-sm font-medium text-stone-700">
-        Mật khẩu
-      </label>
+      <div className="mt-4 flex items-center justify-between">
+        <label htmlFor="password" className="block text-sm font-medium text-stone-700">
+          Mật khẩu
+        </label>
+        <Link
+          href="/quen-mat-khau"
+          className="text-xs font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2 transition hover:text-emerald-900"
+        >
+          Quên mật khẩu?
+        </Link>
+      </div>
       <input
         id="password"
         name="password"

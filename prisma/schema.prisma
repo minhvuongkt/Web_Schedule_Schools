@@ -539,6 +539,7 @@ model User {
   teacher           Teacher?                @relation("TeacherUser")
   student           Student?                @relation("StudentUser")
   authSessions      AuthSession[]
+  verificationCodes VerificationCode[]
   notifications     NotificationRecipient[]
   pushSubscriptions PushSubscription[]
 }
@@ -572,6 +573,26 @@ model AuthSession {
   createdAt DateTime @default(now())
 
   @@index([userId])
+}
+
+// One-time email verification codes (onboarding, email change, password
+// reset). Only the HMAC of the code is stored; codes expire quickly and are
+// limited by attempts + resend interval.
+model VerificationCode {
+  id         String    @id @default(cuid())
+  userId     String?
+  user       User?     @relation(fields: [userId], references: [id])
+  email      String // normalized (lowercase)
+  purpose    String // ONBOARDING | EMAIL_CHANGE | PASSWORD_RESET
+  codeHash   String // HMAC-SHA256(AUTH_SECRET, purpose:email:code)
+  attempts   Int       @default(0)
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, purpose, consumedAt])
+  @@index([userId, purpose])
+  @@index([createdAt])
 }
 
 model AuditLog {

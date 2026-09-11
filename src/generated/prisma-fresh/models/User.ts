@@ -242,6 +242,7 @@ export type UserWhereInput = {
   teacher?: Prisma.XOR<Prisma.TeacherNullableScalarRelationFilter, Prisma.TeacherWhereInput> | null
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
   authSessions?: Prisma.AuthSessionListRelationFilter
+  verificationCodes?: Prisma.VerificationCodeListRelationFilter
   notifications?: Prisma.NotificationRecipientListRelationFilter
   pushSubscriptions?: Prisma.PushSubscriptionListRelationFilter
 }
@@ -263,6 +264,7 @@ export type UserOrderByWithRelationInput = {
   teacher?: Prisma.TeacherOrderByWithRelationInput
   student?: Prisma.StudentOrderByWithRelationInput
   authSessions?: Prisma.AuthSessionOrderByRelationAggregateInput
+  verificationCodes?: Prisma.VerificationCodeOrderByRelationAggregateInput
   notifications?: Prisma.NotificationRecipientOrderByRelationAggregateInput
   pushSubscriptions?: Prisma.PushSubscriptionOrderByRelationAggregateInput
 }
@@ -287,6 +289,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   teacher?: Prisma.XOR<Prisma.TeacherNullableScalarRelationFilter, Prisma.TeacherWhereInput> | null
   student?: Prisma.XOR<Prisma.StudentNullableScalarRelationFilter, Prisma.StudentWhereInput> | null
   authSessions?: Prisma.AuthSessionListRelationFilter
+  verificationCodes?: Prisma.VerificationCodeListRelationFilter
   notifications?: Prisma.NotificationRecipientListRelationFilter
   pushSubscriptions?: Prisma.PushSubscriptionListRelationFilter
 }, "id" | "username" | "email">
@@ -343,6 +346,7 @@ export type UserCreateInput = {
   teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
@@ -363,6 +367,7 @@ export type UserUncheckedCreateInput = {
   teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -383,6 +388,7 @@ export type UserUpdateInput = {
   teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
@@ -403,6 +409,7 @@ export type UserUncheckedUpdateInput = {
   teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -632,6 +639,22 @@ export type UserUpdateOneRequiredWithoutAuthSessionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuthSessionsInput, Prisma.UserUpdateWithoutAuthSessionsInput>, Prisma.UserUncheckedUpdateWithoutAuthSessionsInput>
 }
 
+export type UserCreateNestedOneWithoutVerificationCodesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVerificationCodesInput, Prisma.UserUncheckedCreateWithoutVerificationCodesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVerificationCodesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutVerificationCodesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutVerificationCodesInput, Prisma.UserUncheckedCreateWithoutVerificationCodesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutVerificationCodesInput
+  upsert?: Prisma.UserUpsertWithoutVerificationCodesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutVerificationCodesInput, Prisma.UserUpdateWithoutVerificationCodesInput>, Prisma.UserUncheckedUpdateWithoutVerificationCodesInput>
+}
+
 export type UserCreateWithoutSchoolInput = {
   id?: string
   username: string
@@ -647,6 +670,7 @@ export type UserCreateWithoutSchoolInput = {
   teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
@@ -666,6 +690,7 @@ export type UserUncheckedCreateWithoutSchoolInput = {
   teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -729,6 +754,7 @@ export type UserCreateWithoutTeacherInput = {
   school?: Prisma.SchoolCreateNestedOneWithoutUsersInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
@@ -748,6 +774,7 @@ export type UserUncheckedCreateWithoutTeacherInput = {
   updatedAt?: Date | string
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -783,6 +810,7 @@ export type UserUpdateWithoutTeacherInput = {
   school?: Prisma.SchoolUpdateOneWithoutUsersNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
@@ -802,6 +830,7 @@ export type UserUncheckedUpdateWithoutTeacherInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -821,6 +850,7 @@ export type UserCreateWithoutStudentInput = {
   school?: Prisma.SchoolCreateNestedOneWithoutUsersInput
   teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
@@ -840,6 +870,7 @@ export type UserUncheckedCreateWithoutStudentInput = {
   updatedAt?: Date | string
   teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -875,6 +906,7 @@ export type UserUpdateWithoutStudentInput = {
   school?: Prisma.SchoolUpdateOneWithoutUsersNestedInput
   teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
@@ -894,6 +926,7 @@ export type UserUncheckedUpdateWithoutStudentInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -914,6 +947,7 @@ export type UserCreateWithoutNotificationsInput = {
   teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
 
@@ -933,6 +967,7 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -968,6 +1003,7 @@ export type UserUpdateWithoutNotificationsInput = {
   teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
 
@@ -987,6 +1023,7 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1006,6 +1043,7 @@ export type UserCreateWithoutPushSubscriptionsInput = {
   teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
 }
 
@@ -1025,6 +1063,7 @@ export type UserUncheckedCreateWithoutPushSubscriptionsInput = {
   teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
   authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
 }
 
@@ -1060,6 +1099,7 @@ export type UserUpdateWithoutPushSubscriptionsInput = {
   teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
 }
 
@@ -1079,6 +1119,7 @@ export type UserUncheckedUpdateWithoutPushSubscriptionsInput = {
   teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
 }
 
@@ -1097,6 +1138,7 @@ export type UserCreateWithoutAuthSessionsInput = {
   school?: Prisma.SchoolCreateNestedOneWithoutUsersInput
   teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
   student?: Prisma.StudentCreateNestedOneWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
 }
@@ -1116,6 +1158,7 @@ export type UserUncheckedCreateWithoutAuthSessionsInput = {
   updatedAt?: Date | string
   teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
   student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedCreateNestedManyWithoutUserInput
   notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
 }
@@ -1151,6 +1194,7 @@ export type UserUpdateWithoutAuthSessionsInput = {
   school?: Prisma.SchoolUpdateOneWithoutUsersNestedInput
   teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
@@ -1170,6 +1214,103 @@ export type UserUncheckedUpdateWithoutAuthSessionsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutVerificationCodesInput = {
+  id?: string
+  username: string
+  email?: string | null
+  passwordHash: string
+  displayName: string
+  role?: string
+  isActive?: boolean
+  onboardingCompletedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  school?: Prisma.SchoolCreateNestedOneWithoutUsersInput
+  teacher?: Prisma.TeacherCreateNestedOneWithoutUserInput
+  student?: Prisma.StudentCreateNestedOneWithoutUserInput
+  authSessions?: Prisma.AuthSessionCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationRecipientCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutVerificationCodesInput = {
+  id?: string
+  schoolId?: string | null
+  username: string
+  email?: string | null
+  passwordHash: string
+  displayName: string
+  role?: string
+  isActive?: boolean
+  onboardingCompletedAt?: Date | string | null
+  emailVerifiedAt?: Date | string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  teacher?: Prisma.TeacherUncheckedCreateNestedOneWithoutUserInput
+  student?: Prisma.StudentUncheckedCreateNestedOneWithoutUserInput
+  authSessions?: Prisma.AuthSessionUncheckedCreateNestedManyWithoutUserInput
+  notifications?: Prisma.NotificationRecipientUncheckedCreateNestedManyWithoutUserInput
+  pushSubscriptions?: Prisma.PushSubscriptionUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutVerificationCodesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutVerificationCodesInput, Prisma.UserUncheckedCreateWithoutVerificationCodesInput>
+}
+
+export type UserUpsertWithoutVerificationCodesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutVerificationCodesInput, Prisma.UserUncheckedUpdateWithoutVerificationCodesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutVerificationCodesInput, Prisma.UserUncheckedCreateWithoutVerificationCodesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutVerificationCodesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutVerificationCodesInput, Prisma.UserUncheckedUpdateWithoutVerificationCodesInput>
+}
+
+export type UserUpdateWithoutVerificationCodesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  school?: Prisma.SchoolUpdateOneWithoutUsersNestedInput
+  teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
+  student?: Prisma.StudentUpdateOneWithoutUserNestedInput
+  authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
+  pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutVerificationCodesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  schoolId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  username?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  displayName?: Prisma.StringFieldUpdateOperationsInput | string
+  role?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailVerifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
+  student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
+  authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1203,6 +1344,7 @@ export type UserUpdateWithoutSchoolInput = {
   teacher?: Prisma.TeacherUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUpdateManyWithoutUserNestedInput
 }
@@ -1222,6 +1364,7 @@ export type UserUncheckedUpdateWithoutSchoolInput = {
   teacher?: Prisma.TeacherUncheckedUpdateOneWithoutUserNestedInput
   student?: Prisma.StudentUncheckedUpdateOneWithoutUserNestedInput
   authSessions?: Prisma.AuthSessionUncheckedUpdateManyWithoutUserNestedInput
+  verificationCodes?: Prisma.VerificationCodeUncheckedUpdateManyWithoutUserNestedInput
   notifications?: Prisma.NotificationRecipientUncheckedUpdateManyWithoutUserNestedInput
   pushSubscriptions?: Prisma.PushSubscriptionUncheckedUpdateManyWithoutUserNestedInput
 }
@@ -1247,12 +1390,14 @@ export type UserUncheckedUpdateManyWithoutSchoolInput = {
 
 export type UserCountOutputType = {
   authSessions: number
+  verificationCodes: number
   notifications: number
   pushSubscriptions: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   authSessions?: boolean | UserCountOutputTypeCountAuthSessionsArgs
+  verificationCodes?: boolean | UserCountOutputTypeCountVerificationCodesArgs
   notifications?: boolean | UserCountOutputTypeCountNotificationsArgs
   pushSubscriptions?: boolean | UserCountOutputTypeCountPushSubscriptionsArgs
 }
@@ -1272,6 +1417,13 @@ export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensi
  */
 export type UserCountOutputTypeCountAuthSessionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AuthSessionWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountVerificationCodesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.VerificationCodeWhereInput
 }
 
 /**
@@ -1306,6 +1458,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   teacher?: boolean | Prisma.User$teacherArgs<ExtArgs>
   student?: boolean | Prisma.User$studentArgs<ExtArgs>
   authSessions?: boolean | Prisma.User$authSessionsArgs<ExtArgs>
+  verificationCodes?: boolean | Prisma.User$verificationCodesArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   pushSubscriptions?: boolean | Prisma.User$pushSubscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -1364,6 +1517,7 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   teacher?: boolean | Prisma.User$teacherArgs<ExtArgs>
   student?: boolean | Prisma.User$studentArgs<ExtArgs>
   authSessions?: boolean | Prisma.User$authSessionsArgs<ExtArgs>
+  verificationCodes?: boolean | Prisma.User$verificationCodesArgs<ExtArgs>
   notifications?: boolean | Prisma.User$notificationsArgs<ExtArgs>
   pushSubscriptions?: boolean | Prisma.User$pushSubscriptionsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
@@ -1382,6 +1536,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     teacher: Prisma.$TeacherPayload<ExtArgs> | null
     student: Prisma.$StudentPayload<ExtArgs> | null
     authSessions: Prisma.$AuthSessionPayload<ExtArgs>[]
+    verificationCodes: Prisma.$VerificationCodePayload<ExtArgs>[]
     notifications: Prisma.$NotificationRecipientPayload<ExtArgs>[]
     pushSubscriptions: Prisma.$PushSubscriptionPayload<ExtArgs>[]
   }
@@ -1802,6 +1957,7 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   teacher<T extends Prisma.User$teacherArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$teacherArgs<ExtArgs>>): Prisma.Prisma__TeacherClient<runtime.Types.Result.GetResult<Prisma.$TeacherPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   student<T extends Prisma.User$studentArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$studentArgs<ExtArgs>>): Prisma.Prisma__StudentClient<runtime.Types.Result.GetResult<Prisma.$StudentPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   authSessions<T extends Prisma.User$authSessionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$authSessionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuthSessionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  verificationCodes<T extends Prisma.User$verificationCodesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$verificationCodesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$VerificationCodePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifications<T extends Prisma.User$notificationsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notificationsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationRecipientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pushSubscriptions<T extends Prisma.User$pushSubscriptionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pushSubscriptionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PushSubscriptionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2324,6 +2480,30 @@ export type User$authSessionsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.AuthSessionScalarFieldEnum | Prisma.AuthSessionScalarFieldEnum[]
+}
+
+/**
+ * User.verificationCodes
+ */
+export type User$verificationCodesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the VerificationCode
+   */
+  select?: Prisma.VerificationCodeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the VerificationCode
+   */
+  omit?: Prisma.VerificationCodeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.VerificationCodeInclude<ExtArgs> | null
+  where?: Prisma.VerificationCodeWhereInput
+  orderBy?: Prisma.VerificationCodeOrderByWithRelationInput | Prisma.VerificationCodeOrderByWithRelationInput[]
+  cursor?: Prisma.VerificationCodeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.VerificationCodeScalarFieldEnum | Prisma.VerificationCodeScalarFieldEnum[]
 }
 
 /**

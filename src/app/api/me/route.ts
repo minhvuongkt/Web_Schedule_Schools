@@ -5,7 +5,7 @@ import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { mutationErrorResponse, requireApiUser } from "@/server/api/timetable-api";
 import { updateEmail } from "@/server/services/profile.service";
 
-/** PATCH /api/me — change the account email (double-entry confirmation). */
+/** PATCH /api/me — change the account email (code-verified new address). */
 export async function PATCH(request: Request): Promise<NextResponse> {
   const auth = await requireApiUser();
   if (!auth.ok) return auth.response;
@@ -16,7 +16,11 @@ export async function PATCH(request: Request): Promise<NextResponse> {
     return errorResponse(400, "INVALID_JSON", "Thân yêu cầu không phải JSON hợp lệ.");
   }
   const parsed = z
-    .object({ email: z.string().max(200), emailConfirm: z.string().max(200) })
+    .object({
+      email: z.string().max(200),
+      emailConfirm: z.string().max(200),
+      code: z.string().max(20),
+    })
     .safeParse(body);
   if (!parsed.success) return zodErrorResponse(parsed.error.issues);
   try {

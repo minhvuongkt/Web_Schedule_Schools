@@ -6,6 +6,7 @@ import {
   validateNewPassword,
 } from "@/server/domain/credentials";
 import { hashPassword, verifyPassword } from "@/server/domain/password";
+import { consumeVerificationCode } from "@/server/services/verification.service";
 import { MutationError } from "@/server/services/timetable-write.service";
 import type { SessionUser } from "@/server/services/auth.service";
 
@@ -18,13 +19,15 @@ import type { SessionUser } from "@/server/services/auth.service";
  *   revoke every other session.
  * - updateEmail — change the account email (case-insensitive uniqueness).
  *
- * Real inbox verification needs an SMTP service (not configured); the wizard
- * confirms the email by double entry and records emailVerifiedAt.
+ * Both email-writing paths require a one-time code sent to the new address
+ * (see verification.service + mail.service), so the address is genuinely
+ * reachable before it is stored.
  */
 
 export interface OnboardingInput {
   email: string;
   emailConfirm: string;
+  code: string;
   password: string;
   passwordConfirm: string;
 }
@@ -54,6 +57,7 @@ export async function completeOnboarding(
   if (!passwordCheck.ok) throw validationError(passwordCheck.error);
 
   const email = normalizeEmail(input.email);
+  await consumeVerificationCode({ email, purpose: "ONBOARDING", code: input.code });
   await prisma.$transaction(async (t) => {
     const taken = await t.user.findFirst({
       where: { email, id: { not: user.id } },
@@ -148,6 +152,7 @@ export async function changePassword(
 export interface UpdateEmailInput {
   email: string;
   emailConfirm: string;
+  code: string;
 }
 
 export async function updateEmail(
@@ -160,6 +165,7 @@ export async function updateEmail(
   if (!confirmCheck.ok) throw validationError(confirmCheck.error);
 
   const email = normalizeEmail(input.email);
+  await consumeVerificationCode({ email, purpose: "EMAIL_CHANGE", code: input.code });
   await prisma.$transaction(async (t) => {
     const taken = await t.user.findFirst({
       where: { email, id: { not: user.id } },

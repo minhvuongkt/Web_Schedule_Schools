@@ -1,0 +1,26 @@
+-- CreateTable
+CREATE TABLE "VerificationCode" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "email" TEXT NOT NULL,
+    "purpose" TEXT NOT NULL,
+    "codeHash" TEXT NOT NULL,
+    "attempts" INTEGER NOT NULL DEFAULT 0,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "consumedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "VerificationCode_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "VerificationCode_email_purpose_consumedAt_idx" ON "VerificationCode"("email", "purpose", "consumedAt");
+
+-- CreateIndex
+CREATE INDEX "VerificationCode_userId_purpose_idx" ON "VerificationCode"("userId", "purpose");
+
+-- CreateIndex
+CREATE INDEX "VerificationCode_createdAt_idx" ON "VerificationCode"("createdAt");
+
+-- AddForeignKey
+ALTER TABLE "VerificationCode" ADD CONSTRAINT "VerificationCode_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;

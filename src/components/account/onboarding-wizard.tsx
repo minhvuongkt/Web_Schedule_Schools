@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { logoutAction } from "@/app/dang-nhap/actions";
 import { Icon } from "@/components/ui/icon";
@@ -11,13 +11,12 @@ import {
 } from "@/server/domain/credentials";
 
 /**
- * First-login wizard (every role): 1) email, 2) own password, 3) email
- * confirmation. Enforced by requireUser until finished. Real inbox
- * verification needs an SMTP service; the confirmation step double-checks
- * the address and records it as verified.
+ * First-login wizard (every role): 1) email, 2) own password, 3) code sent
+ * to that email. Enforced by requireUser until finished; the account email is
+ * only stored once a 6-digit code proves the inbox is reachable.
  */
 
-const STEPS = ["Email", "Mật khẩu mới", "Xác nhận"];
+const STEPS = ["Email", "Mật khẩu mới", "Mã xác nhận"];
 
 const inputClass =
   "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-600 sm:text-sm";
@@ -52,10 +51,20 @@ export function OnboardingWizard({
   const [emailConfirm, setEmailConfirm] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [verifyEmail, setVerifyEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [codeSent, setCodeSent] = useState(false);
+  const [codeBusy, setCodeBusy] = useState(false);
+  const [codeNotice, setCodeNotice] = useState<string | null>(null);
+  const [resendIn, setResendIn] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const timer = setTimeout(() => setResendIn(resendIn - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendIn]);
 
   function nextFromEmail(event: FormEvent) {
     event.preventDefault();
@@ -67,18 +76,39 @@ export function OnboardingWizard({
     setStep(1);
   }
 
+  async function sendCode(event?: FormEvent) {
+    event?.preventDefault();
+    setCodeBusy(true);
+    setError(null);
+    setCodeNotice(null);
+    try {
+      await postJson("/api/me/email-code", {
+        email,
+        purpose: "ONBOARDING",
+      });
+      setCodeSent(true);
+      setResendIn(60);
+      setCodeNotice(`Đã gửi mã xác nhận tới ${email.trim().toLowerCase()}.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Không gửi được mã xác nhận.");
+    } finally {
+      setCodeBusy(false);
+    }
+  }
+
   function nextFromPassword(event: FormEvent) {
     event.preventDefault();
     const check = validateNewPassword(password, passwordConfirm);
     if (!check.ok) return setError(check.error ?? "Mật khẩu không hợp lệ.");
     setError(null);
     setStep(2);
+    if (!codeSent) void sendCode();
   }
 
   async function finish(event: FormEvent) {
     event.preventDefault();
-    if (verifyEmail.trim().toLowerCase() !== email.trim().toLowerCase()) {
-      return setError("Email nhập lại chưa khớp với email ở bước 1.");
+    if (code.replace(/\D/g, "").length !== 6) {
+      return setError("Vui lòng nhập mã xác nhận gồm 6 chữ số.");
     }
     setBusy(true);
     setError(null);
@@ -86,6 +116,7 @@ export function OnboardingWizard({
       await postJson("/api/me/onboarding", {
         email,
         emailConfirm,
+        code,
         password,
         passwordConfirm,
       });
@@ -277,8 +308,8 @@ export function OnboardingWizard({
             {step === 2 ? (
               <form onSubmit={finish} className="space-y-4">
                 <p className="text-sm text-zinc-600">
-                  Kiểm tra lại thông tin (nhập lại email một lần nữa để xác
-                  nhận), sau đó hoàn tất.
+                  Nhập mã xác nhận gồm 6 chữ số đã gửi tới email của bạn, sau đó
+                  hoàn tất thiết lập.
                 </p>
                 <dl className="space-y-1.5 rounded-lg bg-zinc-50 px-4 py-3 text-sm">
                   <div className="flex justify-between gap-3">
@@ -287,31 +318,60 @@ export function OnboardingWizard({
                   </div>
                   <div className="flex justify-between gap-3">
                     <dt className="text-zinc-500">Email</dt>
-                    <dd className="truncate font-medium text-zinc-900">{email}</dd>
+                    <dd className="truncate font-medium text-zinc-900">
+                      {email.trim().toLowerCase()}
+                    </dd>
                   </div>
                   <div className="flex justify-between gap-3">
                     <dt className="text-zinc-500">Mật khẩu mới</dt>
                     <dd className="text-zinc-900">••••••••</dd>
                   </div>
                 </dl>
+
+                {codeNotice ? (
+                  <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                    {codeNotice}
+                  </p>
+                ) : null}
+
                 <label className="block">
                   <span className="mb-1 block text-sm font-medium text-zinc-700">
-                    Nhập lại email để xác nhận
+                    Mã xác nhận (6 chữ số)
                   </span>
                   <input
-                    type="email"
-                    className={inputClass}
-                    value={verifyEmail}
-                    onChange={(e) => setVerifyEmail(e.target.value)}
-                    autoComplete="off"
+                    type="text"
+                    className={`${inputClass} text-center font-mono text-lg tracking-[0.5em]`}
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={6}
                     required
                   />
                 </label>
+
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-zinc-500">Mã có hiệu lực 10 phút.</span>
+                  <button
+                    type="button"
+                    disabled={codeBusy || resendIn > 0}
+                    onClick={() => void sendCode()}
+                    className="font-medium text-emerald-700 transition hover:text-emerald-900 disabled:cursor-not-allowed disabled:text-zinc-400"
+                  >
+                    {codeBusy
+                      ? "Đang gửi…"
+                      : resendIn > 0
+                        ? `Gửi lại mã sau ${resendIn}s`
+                        : "Gửi lại mã"}
+                  </button>
+                </div>
+
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => {
                       setError(null);
+                      setCodeNotice(null);
                       setStep(1);
                     }}
                     className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-zinc-300 px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
@@ -321,7 +381,7 @@ export function OnboardingWizard({
                   </button>
                   <button
                     type="submit"
-                    disabled={busy}
+                    disabled={busy || codeBusy}
                     className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Icon name="shield-check" size={15} />

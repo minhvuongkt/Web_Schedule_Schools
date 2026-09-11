@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 
 import { Icon } from "@/components/ui/icon";
 import {
@@ -11,7 +11,8 @@ import {
 
 /**
  * /tai-khoan — self-service account page for every signed-in user:
- * view profile info, change email (double entry) and change password.
+ * view profile info, change email (verified with an emailed code) and
+ * change password.
  */
 
 const inputClass =
@@ -45,6 +46,11 @@ export function AccountApp({
   // email form
   const [email, setEmail] = useState(initialEmail);
   const [emailConfirm, setEmailConfirm] = useState(initialEmail);
+  const [emailCode, setEmailCode] = useState("");
+  const [emailCodeSentTo, setEmailCodeSentTo] = useState<string | null>(null);
+  const [emailCodeBusy, setEmailCodeBusy] = useState(false);
+  const [emailCodeNotice, setEmailCodeNotice] = useState<string | null>(null);
+  const [emailResendIn, setEmailResendIn] = useState(0);
   const [emailBusy, setEmailBusy] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailNotice, setEmailNotice] = useState<string | null>(null);
@@ -57,18 +63,53 @@ export function AccountApp({
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (emailResendIn <= 0) return;
+    const timer = setTimeout(() => setEmailResendIn(emailResendIn - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [emailResendIn]);
+
+  async function sendEmailCode() {
+    const format = validateEmailAddress(email);
+    if (!format.ok) return setEmailError(format.error ?? "Email không hợp lệ.");
+    const confirm = validateEmailConfirmation(email, emailConfirm);
+    if (!confirm.ok) return setEmailError(confirm.error ?? "Email không khớp.");
+    setEmailCodeBusy(true);
+    setEmailError(null);
+    setEmailCodeNotice(null);
+    try {
+      await send("/api/me/email-code", "POST", { email, purpose: "EMAIL_CHANGE" });
+      setEmailCodeSentTo(email.trim().toLowerCase());
+      setEmailResendIn(60);
+      setEmailCodeNotice(`Đã gửi mã xác nhận tới ${email.trim().toLowerCase()}.`);
+    } catch (e) {
+      setEmailError(e instanceof Error ? e.message : "Không gửi được mã xác nhận.");
+    } finally {
+      setEmailCodeBusy(false);
+    }
+  }
+
   async function saveEmail(event: FormEvent) {
     event.preventDefault();
     const format = validateEmailAddress(email);
     if (!format.ok) return setEmailError(format.error ?? "Email không hợp lệ.");
     const confirm = validateEmailConfirmation(email, emailConfirm);
     if (!confirm.ok) return setEmailError(confirm.error ?? "Email không khớp.");
+    if (email.trim().toLowerCase() !== emailCodeSentTo) {
+      return setEmailError("Vui lòng gửi mã xác nhận tới email mới trước khi lưu.");
+    }
+    if (emailCode.replace(/\D/g, "").length !== 6) {
+      return setEmailError("Vui lòng nhập mã xác nhận gồm 6 chữ số.");
+    }
     setEmailBusy(true);
     setEmailError(null);
     setEmailNotice(null);
     try {
-      await send("/api/me", "PATCH", { email, emailConfirm });
+      await send("/api/me", "PATCH", { email, emailConfirm, code: emailCode });
       setEmailNotice("Đã lưu địa chỉ email mới.");
+      setEmailCode("");
+      setEmailCodeSentTo(null);
+      setEmailCodeNotice(null);
     } catch (e) {
       setEmailError(e instanceof Error ? e.message : "Không lưu được email.");
     } finally {
@@ -134,7 +175,8 @@ export function AccountApp({
       <section className="mb-5 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5">
         <h2 className="text-sm font-semibold text-zinc-700">Email liên hệ</h2>
         <p className="mt-1 text-xs text-zinc-500">
-          Dùng để nhà trường liên hệ và khôi phục tài khoản khi cần.
+          Dùng để nhà trường liên hệ và khôi phục tài khoản khi cần. Đổi email
+          cần nhập mã xác nhận gửi tới địa chỉ mới.
         </p>
         {emailError ? (
           <p role="alert" className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
@@ -153,7 +195,13 @@ export function AccountApp({
               type="email"
               className={inputClass}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (e.target.value.trim().toLowerCase() !== emailCodeSentTo) {
+                  setEmailCodeSentTo(null);
+                  setEmailCodeNotice(null);
+                }
+              }}
               placeholder="ten@truong.edu.vn"
               autoComplete="email"
               required
@@ -172,6 +220,39 @@ export function AccountApp({
               required
             />
           </label>
+          <div>
+            <span className="mb-1 block text-sm font-medium text-zinc-700">
+              Mã xác nhận (6 chữ số)
+            </span>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                className={`${inputClass} flex-1 text-center font-mono tracking-[0.4em]`}
+                value={emailCode}
+                onChange={(e) => setEmailCode(e.target.value)}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="••••••"
+              />
+              <button
+                type="button"
+                disabled={emailCodeBusy || emailResendIn > 0}
+                onClick={() => void sendEmailCode()}
+                className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 text-sm font-medium text-blue-800 transition hover:bg-blue-100 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Icon name="mail" size={15} />
+                {emailCodeBusy
+                  ? "Đang gửi…"
+                  : emailResendIn > 0
+                    ? `Gửi lại sau ${emailResendIn}s`
+                    : "Gửi mã"}
+              </button>
+            </div>
+            {emailCodeNotice ? (
+              <p className="mt-2 text-xs text-emerald-700">{emailCodeNotice}</p>
+            ) : null}
+          </div>
           <div className="flex justify-end">
             <button
               type="submit"

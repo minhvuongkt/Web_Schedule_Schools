@@ -82,6 +82,7 @@ export const ModelName = {
   User: 'User',
   PushSubscription: 'PushSubscription',
   AuthSession: 'AuthSession',
+  VerificationCode: 'VerificationCode',
   AuditLog: 'AuditLog'
 } as const
 
@@ -516,6 +517,21 @@ export const AuthSessionScalarFieldEnum = {
 } as const
 
 export type AuthSessionScalarFieldEnum = (typeof AuthSessionScalarFieldEnum)[keyof typeof AuthSessionScalarFieldEnum]
+
+
+export const VerificationCodeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  email: 'email',
+  purpose: 'purpose',
+  codeHash: 'codeHash',
+  attempts: 'attempts',
+  expiresAt: 'expiresAt',
+  consumedAt: 'consumedAt',
+  createdAt: 'createdAt'
+} as const
+
+export type VerificationCodeScalarFieldEnum = (typeof VerificationCodeScalarFieldEnum)[keyof typeof VerificationCodeScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {

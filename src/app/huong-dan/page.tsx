@@ -213,9 +213,11 @@ export default function GuidePage() {
                 Mở trang <Link href="/dang-nhap" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Đăng nhập</Link>{" "}
                 và dùng tài khoản do nhà trường cấp. <strong>Lần đầu đăng nhập</strong>,
                 hệ thống yêu cầu thiết lập theo 3 bước: <strong>nhập email</strong> →{" "}
-                <strong>đặt mật khẩu riêng</strong> → <strong>xác nhận email</strong>.
-                Sau đó bạn đăng nhập bằng mật khẩu mới. (Quên mật khẩu: liên hệ
-                quản trị để cấp lại — xem mục Câu hỏi thường gặp.)
+                <strong>đặt mật khẩu riêng</strong> → <strong>nhập mã xác nhận</strong>{" "}
+                gửi tới email đó. Sau đó bạn đăng nhập bằng mật khẩu mới. (Quên
+                mật khẩu: dùng trang{" "}
+                <Link href="/quen-mat-khau" className="font-medium text-emerald-700 underline decoration-emerald-300 underline-offset-2">Quên mật khẩu</Link>{" "}
+                để nhận mã qua email và tự đặt lại.)
               </Step>
               <Step n={2} title="Xem lịch dạy của tôi">
                 Sau khi đăng nhập bạn sẽ vào trang{" "}
@@ -230,7 +232,7 @@ export default function GuidePage() {
                 <strong>Đổi mật khẩu</strong>: nhập mật khẩu hiện tại và mật
                 khẩu mới (tối thiểu 8 ký tự). Sau khi đổi, các thiết bị khác sẽ
                 phải đăng nhập lại. Tại đây bạn cũng đổi được <strong>email
-                liên hệ</strong>.
+                liên hệ</strong> (cần nhập mã xác nhận gửi tới địa chỉ mới).
               </Step>
               <Step n={4} title="Dạy thay &amp; dạy bù">
                 Khi được xếp dạy thay, trên lịch hiện nhãn màu{" "}
@@ -452,11 +454,12 @@ export default function GuidePage() {
                   Quên mật khẩu thì sao?
                 </dt>
                 <dd className="mt-1 text-sm text-stone-600">
-                  Liên hệ quản trị nhà trường. Quản trị vào trang{" "}
-                  <strong>Tài khoản</strong> và bấm “Cấp lại mật khẩu”. Người
-                  dùng đăng nhập bằng mật khẩu tạm đó rồi hệ thống yêu cầu{" "}
-                  <strong>thiết lập lại</strong> (nhập email + đặt mật khẩu riêng
-                  ở lần đăng nhập kế tiếp). Muốn tự đổi mật khẩu bất cứ lúc nào:{" "}
+                  Vào trang <strong>Quên mật khẩu</strong> ở màn hình đăng nhập,
+                  nhập email đã đăng ký để nhận mã xác nhận (6 chữ số, hiệu lực
+                  10 phút) rồi đặt mật khẩu mới. Nếu email chưa có trong hồ sơ
+                  hoặc không nhận được mã, liên hệ quản trị nhà trường: quản trị
+                  vào trang <strong>Tài khoản</strong> và bấm “Cấp lại mật khẩu”.
+                  Muốn tự đổi mật khẩu bất cứ lúc nào:{" "}
                   <strong>Tài khoản của tôi</strong> → Đổi mật khẩu.
                 </dd>
               </div>

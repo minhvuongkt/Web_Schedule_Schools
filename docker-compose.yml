@@ -63,6 +63,16 @@ services:
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       VAPID_SUBJECT: ${VAPID_SUBJECT:-mailto:tkb@example.edu.vn}
+      # SMTP for verification codes (forgot password, email confirmation).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-Hệ thống TKB}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      # HMAC key hashing verification codes — generate once (see .env.example).
+      AUTH_SECRET: ${AUTH_SECRET:-}
     ports:
       - "${APP_PORT:-3000}:3000"
 

@@ -19,6 +19,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     .object({
       email: z.string().max(200),
       emailConfirm: z.string().max(200),
+      code: z.string().max(20),
       password: z.string().max(200),
       passwordConfirm: z.string().max(200),
     })
