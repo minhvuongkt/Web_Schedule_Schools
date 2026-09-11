@@ -219,7 +219,10 @@ export async function sendWebPush(
       method: "POST",
       headers: {
         TTL: "86400",
-        Urgency: "normal",
+        // High urgency raises delivery priority (Android/FCM) — it wakes the
+        // device and is what lets the notification surface on the lock screen
+        // and as a heads-up banner, subject to the user's channel settings.
+        Urgency: "high",
         Authorization: authorization,
         "Content-Encoding": "aes128gcm",
         "Content-Type": "application/octet-stream",
