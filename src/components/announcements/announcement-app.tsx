@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 
 import { roleLabelVi } from "@/components/leadership/labels";
 import { Icon } from "@/components/ui/icon";
+import { Modal } from "@/components/ui/modal";
 import {
   AUDIENCES,
   AUDIENCE_LABELS_VI,
@@ -76,6 +77,12 @@ export function AnnouncementApp() {
   const [notice, setNotice] = useState<string | null>(null);
   const [recent, setRecent] = useState<AnnouncementRow[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
+  const [selectedAnnouncementIds, setSelectedAnnouncementIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [recipientOptions, setRecipientOptions] = useState<SelectableRecipient[]>([]);
   const [recipientsLoading, setRecipientsLoading] = useState(false);
@@ -205,6 +212,40 @@ export function AnnouncementApp() {
     title.trim().length < 2 ||
     body.trim().length < 1 ||
     (audience === "SELECTED" && selectedCount === 0);
+
+  function toggleAnnouncement(id: string) {
+    setSelectedAnnouncementIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  async function deleteSelected() {
+    if (deleting || selectedAnnouncementIds.size === 0) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      const result = await api<{ deleted: number; classNotices: number }>(
+        "/api/announcements",
+        {
+          method: "DELETE",
+          body: JSON.stringify({ ids: [...selectedAnnouncementIds] }),
+        },
+      );
+      const parts = [`${result.deleted} thông báo`];
+      if (result.classNotices > 0) parts.push(`${result.classNotices} thông báo lớp`);
+      setNotice(`Đã xóa ${parts.join(" và ")} khỏi tất cả người nhận.`);
+      setSelectedAnnouncementIds(new Set());
+      setDeleteConfirmOpen(false);
+      await loadRecent();
+    } catch (e) {
+      setDeleteError(e instanceof Error ? e.message : "Không xóa được thông báo.");
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
@@ -421,9 +462,30 @@ export function AnnouncementApp() {
       </form>
 
       <section className="mt-6">
-        <h2 className="mb-2 text-sm font-semibold text-zinc-700">
-          Đã gửi gần đây
-        </h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-zinc-700">
+            Đã gửi gần đây
+          </h2>
+          {recent.length > 0 ? (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-zinc-500">
+                Đã chọn {selectedAnnouncementIds.size}
+              </span>
+              <button
+                type="button"
+                disabled={selectedAnnouncementIds.size === 0}
+                onClick={() => {
+                  setDeleteError(null);
+                  setDeleteConfirmOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition-colors hover:border-rose-500 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="trash-2" size={13} />
+                Xóa đã chọn
+              </button>
+            </div>
+          ) : null}
+        </div>
         {loadingRecent ? (
           <p className="rounded-xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
             Đang tải…
@@ -440,6 +502,13 @@ export function AnnouncementApp() {
                 className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
               >
                 <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedAnnouncementIds.has(item.id)}
+                    onChange={() => toggleAnnouncement(item.id)}
+                    className="h-4 w-4 shrink-0 accent-rose-600"
+                    aria-label={`Chọn thông báo: ${item.title}`}
+                  />
                   <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-800">
                     {AUDIENCE_LABELS_VI[item.audience]}
                   </span>
@@ -471,6 +540,46 @@ export function AnnouncementApp() {
           </ul>
         )}
       </section>
+
+      {deleteConfirmOpen ? (
+        <Modal title="Xóa thông báo đã chọn?" onClose={() => setDeleteConfirmOpen(false)}>
+          <div className="space-y-4">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+              <p className="font-semibold">Thao tác này không thể hoàn tác.</p>
+              <p className="mt-1">
+                {selectedAnnouncementIds.size} thông báo sẽ bị xóa khỏi hộp thư
+                của toàn bộ người nhận — kể cả thông báo lớp trong sổ tay học
+                sinh. Nhật ký thao tác vẫn được giữ lại.
+              </p>
+            </div>
+            {deleteError ? (
+              <p role="alert" className="text-sm text-rose-700">
+                {deleteError}
+              </p>
+            ) : null}
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="min-h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => void deleteSelected()}
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Icon name="trash-2" size={15} />
+                {deleting
+                  ? "Đang xóa…"
+                  : `Xóa ${selectedAnnouncementIds.size} thông báo`}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }

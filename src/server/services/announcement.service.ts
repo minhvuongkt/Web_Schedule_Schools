@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import { prisma } from "@/server/db";
 import {
   audienceTargets,
@@ -188,6 +190,7 @@ export async function sendAnnouncement(
   }
 
   const created = await prisma.$transaction(async (t) => {
+    const batchId = randomUUID();
     const notification = await t.notification.create({
       data: {
         type: "ANNOUNCEMENT",
@@ -201,6 +204,7 @@ export async function sendAnnouncement(
             input.audience === "SELECTED"
               ? recipients.slice(0, RECIPIENT_NAMES_STORED).map((r) => r.displayName)
               : undefined,
+          batchId,
         },
       },
     });
@@ -218,7 +222,7 @@ export async function sendAnnouncement(
           type: "CLASS_ANNOUNCEMENT",
           title,
           body,
-          payload: { classId: cls.id, audience: input.audience },
+          payload: { classId: cls.id, audience: input.audience, batchId },
         },
       });
     }
@@ -261,4 +265,88 @@ export async function listAnnouncements(
     select: { id: true, title: true, body: true, createdAt: true, payload: true },
   });
   return rows.map(toRow);
+}
+
+export interface DeleteAnnouncementsResult {
+  /** Selected announcements removed. */
+  deleted: number;
+  /** Public class notices removed with them. */
+  classNotices: number;
+}
+
+/**
+ * Deletes announcements for EVERYONE: the notification, every recipient row
+ * (they disappear from each inbox) and the class notices created with the
+ * same send (linked via payload.batchId). Audit history is preserved.
+ */
+export async function deleteAnnouncements(
+  ids: string[],
+  actor: SessionUser,
+): Promise<DeleteAnnouncementsResult> {
+  assertSend(actor);
+  const unique = [...new Set(ids.map((id) => id.trim()).filter((id) => id !== ""))];
+  if (unique.length === 0) {
+    throw new MutationError("VALIDATION_ERROR", "Chưa chọn thông báo nào để xóa.", {}, 400);
+  }
+  if (unique.length > 50) {
+    throw new MutationError(
+      "VALIDATION_ERROR",
+      "Chỉ xóa tối đa 50 thông báo trong một lần.",
+      {},
+      400,
+    );
+  }
+
+  return prisma.$transaction(async (t) => {
+    const rows = await t.notification.findMany({
+      where: { id: { in: unique }, type: "ANNOUNCEMENT" },
+      select: { id: true, title: true, payload: true },
+    });
+    if (rows.length === 0) {
+      throw new MutationError("NOT_FOUND", "Không tìm thấy thông báo để xóa.", {}, 404);
+    }
+
+    const batchIds = rows
+      .map((r) => ((r.payload ?? {}) as { batchId?: unknown }).batchId)
+      .filter((b): b is string => typeof b === "string");
+    let classNotices: { id: string }[] = [];
+    if (batchIds.length > 0) {
+      // Json path filters cannot express `in`; the class-notice table is tiny
+      // (classes per announcement), so filter in memory.
+      const candidates = await t.notification.findMany({
+        where: { type: "CLASS_ANNOUNCEMENT" },
+        select: { id: true, payload: true },
+      });
+      classNotices = candidates.filter((c) => {
+        const batchId = ((c.payload ?? {}) as { batchId?: unknown }).batchId;
+        return typeof batchId === "string" && batchIds.includes(batchId);
+      });
+    }
+
+    const allIds = [
+      ...new Set([...rows.map((r) => r.id), ...classNotices.map((c) => c.id)]),
+    ];
+    await t.notificationRecipient.deleteMany({
+      where: { notificationId: { in: allIds } },
+    });
+    await t.notification.deleteMany({ where: { id: { in: allIds } } });
+
+    await t.auditLog.create({
+      data: {
+        actorId: actor.id,
+        actorName: actor.displayName,
+        action: "DELETE",
+        entityType: "Notification",
+        entityId: rows[0].id,
+        before: {
+          titles: rows.map((r) => r.title),
+          classNotices: classNotices.length,
+          totalRemoved: allIds.length,
+        },
+        reason: "announcement removed",
+      },
+    });
+
+    return { deleted: rows.length, classNotices: classNotices.length };
+  });
 }

@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { logoutAction } from "@/app/dang-nhap/actions";
 import { roleLabelVi } from "@/components/leadership/labels";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useScrollLock } from "@/components/ui/use-scroll-lock";
 import { can, type Permission, type Role } from "@/server/domain/roles";
@@ -156,7 +157,7 @@ export function AppShell({
       <nav className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto" aria-label="Điều hướng chính">
         {sections.map((section) => (
           <div key={section.title}>
-            {isCollapsed ? (
+        {isCollapsed ? (
               <div className="mx-auto my-2 h-px w-8 bg-zinc-200" aria-hidden="true" />
             ) : (
               <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
@@ -214,6 +215,12 @@ export function AppShell({
             {isCollapsed ? null : <span>Thu gọn</span>}
           </button>
         ) : null}
+
+        {isCollapsed ? null : (
+          <div className="mb-2 px-1">
+            <InstallPrompt compact />
+          </div>
+        )}
 
         {isCollapsed ? (
           <div className="flex flex-col items-center gap-1.5">

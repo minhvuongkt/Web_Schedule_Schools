@@ -6,7 +6,11 @@ import { requireUser } from "@/server/auth/session";
 import { can } from "@/server/domain/roles";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: "Ban giám hiệu — Măng Cành" };
+  return {
+    title: "Ban giám hiệu — Măng Cành",
+    // Leadership installs the manager app (same as /admin).
+    manifest: "/admin.webmanifest",
+  };
 }
 
 export const dynamic = "force-dynamic";

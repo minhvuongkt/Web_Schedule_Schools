@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Sổ tay học sinh — Măng Cành",
   description:
     "Thời khóa biểu hôm nay, tuần và thông báo lớp — Trường PTDTBT TH & THCS Măng Cành.",
+  manifest: "/hsv.webmanifest",
 };
 
 /**

@@ -6,6 +6,7 @@ import { requireApiUser, mutationErrorResponse } from "@/server/api/timetable-ap
 import {
   ANNOUNCEMENT_BODY_MAX,
   ANNOUNCEMENT_TITLE_MAX,
+  deleteAnnouncements,
   listAnnouncements,
   sendAnnouncement,
 } from "@/server/services/announcement.service";
@@ -63,6 +64,28 @@ export async function POST(request: Request): Promise<NextResponse> {
       auth.user,
     );
     return NextResponse.json({ announcement }, { status: 201 });
+  } catch (error) {
+    return mutationErrorResponse(error) ?? internal(error);
+  }
+}
+
+/** DELETE /api/announcements — remove announcements for every recipient. */
+export async function DELETE(request: Request): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse(400, "INVALID_JSON", "Thân yêu cầu không phải JSON hợp lệ.");
+  }
+  const parsed = z
+    .object({ ids: z.array(z.string().min(1)).min(1).max(50) })
+    .safeParse(body);
+  if (!parsed.success) return zodErrorResponse(parsed.error.issues);
+  try {
+    const result = await deleteAnnouncements(parsed.data.ids, auth.user);
+    return NextResponse.json(result);
   } catch (error) {
     return mutationErrorResponse(error) ?? internal(error);
   }

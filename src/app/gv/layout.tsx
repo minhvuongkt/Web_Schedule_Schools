@@ -4,7 +4,10 @@ import type { ReactNode } from "react";
 import { requireTeacher } from "@/server/auth/session";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return { title: "Lịch dạy — Măng Cành" };
+  return {
+    title: "Lịch dạy — Măng Cành",
+    manifest: "/gv.webmanifest",
+  };
 }
 
 /**

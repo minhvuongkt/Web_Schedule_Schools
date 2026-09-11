@@ -1,0 +1,18 @@
+{
+  "id": "/gv-app",
+  "name": "Lịch dạy — Măng Cành",
+  "short_name": "Lịch dạy",
+  "description": "Lịch dạy, dạy thay và thông báo dành cho giáo viên — Trường PTDTBT TH & THCS Măng Cành.",
+  "start_url": "/gv",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fafafa",
+  "theme_color": "#1d4ed8",
+  "lang": "vi",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

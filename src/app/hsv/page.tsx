@@ -1,3 +1,4 @@
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { UiLink } from "@/components/ui/link";
 import { listClasses } from "@/server/services/timetable-read.service";
 import {
@@ -55,6 +56,9 @@ export default async function StudentHomePage({
           todayLabel={todayLabel}
           view={null}
         />
+        <div className="mt-6 flex justify-center">
+          <InstallPrompt compact />
+        </div>
       </main>
     );
   }
@@ -78,6 +82,9 @@ export default async function StudentHomePage({
           Xem thời khóa biểu đầy đủ theo lớp
         </UiLink>
       </p>
+      <div className="mt-4 flex justify-center pb-2">
+        <InstallPrompt compact />
+      </div>
     </main>
   );
 }

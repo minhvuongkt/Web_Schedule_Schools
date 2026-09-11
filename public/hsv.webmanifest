@@ -1,0 +1,18 @@
+{
+  "id": "/hsv-app",
+  "name": "Sổ tay học sinh — Măng Cành",
+  "short_name": "HS Măng Cành",
+  "description": "Thời khóa biểu, thông báo lớp và hồ sơ học sinh — Trường PTDTBT TH & THCS Măng Cành.",
+  "start_url": "/hsv",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF7EF",
+  "theme_color": "#047857",
+  "lang": "vi",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
