@@ -7,10 +7,13 @@ import { normalizeName } from "@/server/domain/normalize";
 /**
  * Reference-catalog management: teachers, subjects (+ components), rooms.
  * Gated on assignments:manage (SUPER_ADMIN + TIMETABLE_ADMIN — the data-entry
- * role that also owns Excel import and phân công). Physical deletes are
- * never used: teachers deactivate (isActive=false, preserving entries,
- * substitutions and audit history); subjects/rooms/subject components are
- * reference data protected by FKs from entries and assignments.
+ * role that also owns Excel import and phân công).
+ *
+ * Deletion policy: a record may only be deleted while nothing references it
+ * (no schedule entries, assignments, substitutions, linked account, …).
+ * Otherwise the delete is refused with a clear reason — historical timetable
+ * data must keep resolving to its teacher/subject/room. Teachers who are done
+ * teaching should be deactivated (isActive=false) instead.
  */
 
 function assertManage(user: SessionUser): void {
@@ -472,4 +475,182 @@ export async function updateRoom(
     await audit(t, actor, "UPDATE", "Room", roomId, existing, next);
     return { roomId };
   });
+}
+
+// --- deletes -----------------------------------------------------------------
+
+function inUseError(message: string): MutationError {
+  return new MutationError("IN_USE", message, {}, 409);
+}
+
+/** A foreign-key error means a concurrent write referenced the row first. */
+function isForeignKeyError(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    (error as { code?: unknown }).code === "P2003"
+  );
+}
+
+/** Deletes a teacher only when nothing references them (or their account). */
+export async function deleteTeacher(teacherId: string, actor: SessionUser): Promise<void> {
+  assertManage(actor);
+  const existing = await prisma.teacher.findUnique({
+    where: { id: teacherId },
+    select: {
+      id: true,
+      code: true,
+      fullName: true,
+      userId: true,
+      _count: {
+        select: {
+          assignments: true,
+          availability: true,
+          entries: true,
+          homeroomClasses: true,
+          substitutionsFrom: true,
+          substitutionsTo: true,
+          aliases: true,
+        },
+      },
+    },
+  });
+  if (!existing) {
+    throw new MutationError("TEACHER_NOT_FOUND", "Không tìm thấy giáo viên.", { teacherId }, 404);
+  }
+  if (existing.userId) {
+    throw inUseError(
+      "Giáo viên đã gắn tài khoản đăng nhập nên không thể xóa. Hãy khóa tài khoản (trang Tài khoản) hoặc chuyển sang trạng thái Ngừng dạy.",
+    );
+  }
+  const counts = existing._count;
+  if (
+    counts.assignments + counts.availability + counts.entries + counts.homeroomClasses +
+      counts.substitutionsFrom + counts.substitutionsTo + counts.aliases >
+    0
+  ) {
+    throw inUseError(
+      "Giáo viên đang được dùng trong phân công, lịch dạy hoặc dạy thay nên không thể xóa. Hãy chuyển sang trạng thái Ngừng dạy.",
+    );
+  }
+  try {
+    await prisma.$transaction(async (t) => {
+      await t.teacher.delete({ where: { id: teacherId } });
+      await audit(t, actor, "DELETE", "Teacher", teacherId, {
+        code: existing.code,
+        fullName: existing.fullName,
+      }, null);
+    });
+  } catch (error) {
+    if (isForeignKeyError(error)) {
+      throw inUseError("Giáo viên vừa được dùng ở nơi khác nên không thể xóa.");
+    }
+    throw error;
+  }
+}
+
+/** Deletes a subject only when it has no components and no usage history. */
+export async function deleteSubject(subjectId: string, actor: SessionUser): Promise<void> {
+  assertManage(actor);
+  const existing = await prisma.subject.findUnique({
+    where: { id: subjectId },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      _count: {
+        select: { components: true, assignments: true, requirements: true, entries: true },
+      },
+    },
+  });
+  if (!existing) {
+    throw new MutationError("SUBJECT_NOT_FOUND", "Không tìm thấy môn học.", { subjectId }, 404);
+  }
+  const counts = existing._count;
+  if (counts.entries + counts.assignments + counts.requirements > 0) {
+    throw inUseError(
+      "Môn học đang được dùng trong lịch dạy, phân công hoặc yêu cầu giảng dạy nên không thể xóa.",
+    );
+  }
+  if (counts.components > 0) {
+    throw inUseError("Môn học còn phân môn. Hãy xóa các phân môn trước rồi mới xóa môn học.");
+  }
+  try {
+    await prisma.$transaction(async (t) => {
+      await t.subject.delete({ where: { id: subjectId } });
+      await audit(t, actor, "DELETE", "Subject", subjectId, {
+        code: existing.code,
+        name: existing.name,
+      }, null);
+    });
+  } catch (error) {
+    if (isForeignKeyError(error)) {
+      throw inUseError("Môn học vừa được dùng ở nơi khác nên không thể xóa.");
+    }
+    throw error;
+  }
+}
+
+/** Deletes a subject component only when no entry/assignment references it. */
+export async function deleteSubjectComponent(
+  componentId: string,
+  actor: SessionUser,
+): Promise<void> {
+  assertManage(actor);
+  const existing = await prisma.subjectComponent.findUnique({
+    where: { id: componentId },
+    select: {
+      id: true,
+      code: true,
+      name: true,
+      subjectId: true,
+      _count: { select: { assignments: true, requirements: true, entries: true } },
+    },
+  });
+  if (!existing) {
+    throw new MutationError("COMPONENT_NOT_FOUND", "Không tìm thấy phân môn.", { componentId }, 404);
+  }
+  const counts = existing._count;
+  if (counts.assignments + counts.requirements + counts.entries > 0) {
+    throw inUseError(
+      "Phân môn đang được dùng trong lịch dạy hoặc phân công nên không thể xóa.",
+    );
+  }
+  await prisma.$transaction(async (t) => {
+    await t.subjectComponent.delete({ where: { id: componentId } });
+    await audit(t, actor, "DELETE", "SubjectComponent", componentId, {
+      code: existing.code,
+      name: existing.name,
+      subjectId: existing.subjectId,
+    }, null);
+  });
+}
+
+/** Deletes a room only when no timetable entry uses it. */
+export async function deleteRoom(roomId: string, actor: SessionUser): Promise<void> {
+  assertManage(actor);
+  const existing = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: { id: true, code: true, name: true, _count: { select: { entries: true } } },
+  });
+  if (!existing) {
+    throw new MutationError("ROOM_NOT_FOUND", "Không tìm thấy phòng học.", { roomId }, 404);
+  }
+  if (existing._count.entries > 0) {
+    throw inUseError("Phòng học đang được dùng trong lịch dạy nên không thể xóa.");
+  }
+  try {
+    await prisma.$transaction(async (t) => {
+      await t.room.delete({ where: { id: roomId } });
+      await audit(t, actor, "DELETE", "Room", roomId, {
+        code: existing.code,
+        name: existing.name,
+      }, null);
+    });
+  } catch (error) {
+    if (isForeignKeyError(error)) {
+      throw inUseError("Phòng học vừa được dùng ở nơi khác nên không thể xóa.");
+    }
+    throw error;
+  }
 }

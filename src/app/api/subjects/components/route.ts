@@ -4,12 +4,14 @@ import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { requireApiUser, mutationErrorResponse } from "@/server/api/timetable-api";
 import {
   createSubjectComponent,
+  deleteSubjectComponent,
   updateSubjectComponent,
 } from "@/server/services/catalog.service";
 
 /**
- * POST  /api/subjects/components           {subjectId, code, name}
- * PATCH /api/subjects/components?id=...    {name}
+ * POST   /api/subjects/components           {subjectId, code, name}
+ * PATCH  /api/subjects/components?id=...    {name}
+ * DELETE /api/subjects/components?id=...    (only when unused)
  */
 
 const createSchema = z.object({
@@ -57,6 +59,22 @@ export async function PATCH(request: Request): Promise<NextResponse> {
   if (!parsed.success) return zodErrorResponse(parsed.error.issues);
   try {
     return NextResponse.json(await updateSubjectComponent(id, parsed.data, auth.user));
+  } catch (error) {
+    return mutationErrorResponse(error) ?? internal(error);
+  }
+}
+
+/** DELETE /api/subjects/components?id=... — only when no assignment/entry uses it. */
+export async function DELETE(request: Request): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) {
+    return errorResponse(400, "VALIDATION_ERROR", "Thiếu tham số id.");
+  }
+  try {
+    await deleteSubjectComponent(id, auth.user);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return mutationErrorResponse(error) ?? internal(error);
   }

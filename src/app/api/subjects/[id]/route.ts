@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { requireApiUser, mutationErrorResponse, type Params } from "@/server/api/timetable-api";
-import { updateSubject } from "@/server/services/catalog.service";
+import { updateSubject, deleteSubject } from "@/server/services/catalog.service";
 
 /** PATCH /api/subjects/:id  {name?, category?} */
 
@@ -28,6 +28,22 @@ export async function PATCH(
   if (!parsed.success) return zodErrorResponse(parsed.error.issues);
   try {
     return NextResponse.json(await updateSubject(id, parsed.data, auth.user));
+  } catch (error) {
+    return mutationErrorResponse(error) ?? internal(error);
+  }
+}
+
+/** DELETE /api/subjects/:id — only when unused and component-free (409 otherwise). */
+export async function DELETE(
+  _request: Request,
+  { params }: Params,
+): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  const { id } = await params;
+  try {
+    await deleteSubject(id, auth.user);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return mutationErrorResponse(error) ?? internal(error);
   }

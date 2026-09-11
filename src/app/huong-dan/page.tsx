@@ -407,8 +407,12 @@ export default function GuidePage() {
                 <MenuPath>Khóa</MenuPath> thay vì xóa.
               </Step>
               <Step n={3} title="Danh mục trường học">
-                Trang <strong>Danh mục</strong>: thêm / sửa giáo viên, lớp,
-                môn học, phòng học và phân công giảng dạy.
+                Trang <strong>Danh mục</strong>: thêm / sửa giáo viên, môn học,
+                phòng học và phân công giảng dạy. Có thể <strong>xóa</strong>{" "}
+                bản ghi nhập nhầm, nhưng chỉ khi bản ghi{" "}
+                <strong>chưa từng dùng</strong> trong lịch dạy hoặc phân công —
+                nếu đang được dùng, hệ thống chặn và báo lý do. Giáo viên nghỉ
+                dạy hãy dùng <MenuPath>Ngừng dạy</MenuPath> để giữ lịch sử.
               </Step>
               <Step n={4} title="Nhật ký thao tác">
                 Trang <strong>Nhật ký</strong> ghi lại ai đã làm gì, lúc nào —

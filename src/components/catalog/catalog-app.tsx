@@ -10,8 +10,9 @@ import type { Role } from "@/server/domain/roles";
 /**
  * Catalog management (/admin/danh-muc): teachers, subjects (+ components)
  * and rooms. All writes go through the catalog API with audit logging;
- * teachers toggle isActive (soft delete), subjects/rooms are never deleted
- * because entries and assignments reference them.
+ * teachers also toggle isActive (soft delete). Deletion is allowed only for
+ * records never referenced by schedules/assignments — the API refuses with a
+ * clear reason otherwise.
  */
 
 interface TeacherRow {
@@ -45,6 +46,12 @@ interface RoomRow {
 }
 
 type Tab = "teachers" | "subjects" | "rooms";
+
+type DeleteTarget =
+  | { kind: "teacher"; row: TeacherRow }
+  | { kind: "subject"; row: SubjectRow }
+  | { kind: "component"; component: SubjectRow["components"][number] }
+  | { kind: "room"; row: RoomRow };
 
 const TABS: { key: Tab; label: string; icon: string }[] = [
   { key: "teachers", label: "Giáo viên", icon: "user" },
@@ -126,6 +133,7 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
   const [roomModal, setRoomModal] = useState<
     { mode: "create" } | { mode: "edit"; row: RoomRow } | null
   >(null);
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
 
   const flash = useCallback((message: string) => {
     setNotice(message);
@@ -196,7 +204,8 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
             Danh mục trường học
           </h1>
           <p className="mt-1 text-sm text-zinc-600">
-            Sửa thông tin giáo viên, môn học và phòng học của trường.
+            Thêm, sửa và xóa giáo viên, môn học, phòng học của trường. Chỉ xóa
+            được bản ghi chưa từng dùng trong lịch dạy hoặc phân công.
           </p>
         </header>
         {error ? (
@@ -252,6 +261,7 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
           <TeachersTable
             rows={teachers}
             onEdit={(row) => setTeacherModal({ mode: "edit", row })}
+            onDelete={(row) => setDeleteTarget({ kind: "teacher", row })}
             onToggle={(row) =>
               run(async () => {
                 await api(`/api/teachers/${row.id}`, {
@@ -266,6 +276,7 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
           <SubjectsTable
             rows={subjects}
             onEdit={(row) => setSubjectModal({ mode: "edit", row })}
+            onDelete={(row) => setDeleteTarget({ kind: "subject", row })}
             onAddComponent={(subject) => setComponentModal({ subject })}
             onEditComponent={(subject, component) =>
               setComponentModal({ subject, component })
@@ -275,13 +286,15 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
           <RoomsTable
             rows={rooms}
             onEdit={(row) => setRoomModal({ mode: "edit", row })}
+            onDelete={(row) => setDeleteTarget({ kind: "room", row })}
           />
         )}
 
         <p className="mt-6 text-xs text-zinc-400">
-          Danh mục không cho phép xóa: lịch sử thời khóa biểu, phân công và nhật
-          ký hệ thống tham chiếu đến các bản ghi này. Giáo viên nghỉ dạy hãy
-          chuyển sang trạng thái ngừng hoạt động.
+          Hệ thống chỉ xóa khi bản ghi <b>chưa từng được dùng</b> trong thời khóa
+          biểu, phân công hoặc dạy thay — nếu đang được dùng, thao tác sẽ bị chặn
+          kèm lý do. Giáo viên nghỉ dạy hãy dùng nút <b>Ngừng dạy</b> thay vì xóa
+          để giữ nguyên lịch sử.
         </p>
       </div>
 
@@ -341,6 +354,16 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
           initial={componentModal.component ?? null}
           saving={saving}
           onClose={() => setComponentModal(null)}
+          onDelete={
+            componentModal.component
+              ? () => {
+                  const component = componentModal.component;
+                  if (!component) return;
+                  setComponentModal(null);
+                  setDeleteTarget({ kind: "component", component });
+                }
+              : undefined
+          }
           onSubmit={(data) =>
             run(async () => {
               if (componentModal.component) {
@@ -388,6 +411,31 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
           }
         />
       ) : null}
+
+      {deleteTarget ? (
+        <DeleteModal
+          target={deleteTarget}
+          saving={saving}
+          onClose={() => setDeleteTarget(null)}
+          onConfirm={() =>
+            run(async () => {
+              if (deleteTarget.kind === "teacher") {
+                await api(`/api/teachers/${deleteTarget.row.id}`, { method: "DELETE" });
+              } else if (deleteTarget.kind === "subject") {
+                await api(`/api/subjects/${deleteTarget.row.id}`, { method: "DELETE" });
+              } else if (deleteTarget.kind === "component") {
+                await api(`/api/subjects/components?id=${deleteTarget.component.id}`, {
+                  method: "DELETE",
+                });
+              } else {
+                await api(`/api/rooms/${deleteTarget.row.id}`, { method: "DELETE" });
+              }
+              setDeleteTarget(null);
+              await loadAll();
+            }, "Đã xóa khỏi danh mục.")
+          }
+        />
+      ) : null}
     </AppShell>
   );
 }
@@ -395,10 +443,12 @@ export function CatalogApp({ user }: { user: { displayName: string; role: Role }
 function TeachersTable({
   rows,
   onEdit,
+  onDelete,
   onToggle,
 }: {
   rows: TeacherRow[];
   onEdit: (row: TeacherRow) => void;
+  onDelete: (row: TeacherRow) => void;
   onToggle: (row: TeacherRow) => void;
 }) {
   return (
@@ -453,6 +503,14 @@ function TeachersTable({
                 }`}
               >
                 {row.isActive ? "Ngừng dạy" : "Kích hoạt"}
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(row)}
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 text-xs font-semibold text-rose-700 transition-colors hover:border-rose-500 active:scale-95"
+              >
+                <Icon name="trash-2" size={13} />
+                Xóa
               </button>
             </div>
           </li>
@@ -526,6 +584,14 @@ function TeachersTable({
                 >
                   {row.isActive ? "Ngừng dạy" : "Kích hoạt"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(row)}
+                  className="ml-1.5 inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition duration-200 hover:border-rose-500 active:scale-95"
+                >
+                  <Icon name="trash-2" size={12} />
+                  Xóa
+                </button>
               </td>
             </tr>
           ))}
@@ -546,11 +612,13 @@ function TeachersTable({
 function SubjectsTable({
   rows,
   onEdit,
+  onDelete,
   onAddComponent,
   onEditComponent,
 }: {
   rows: SubjectRow[];
   onEdit: (row: SubjectRow) => void;
+  onDelete: (row: SubjectRow) => void;
   onAddComponent: (subject: SubjectRow) => void;
   onEditComponent: (subject: SubjectRow, component: SubjectRow["components"][number]) => void;
 }) {
@@ -569,13 +637,23 @@ function SubjectsTable({
                 {row.category ? ` · ${row.category}` : ""} · {row.entryCount} tiết đã xếp
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => onEdit(row)}
-              className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition duration-200 hover:border-blue-600 hover:text-blue-700 active:scale-95"
-            >
-              Sửa
-            </button>
+            <div className="flex shrink-0 gap-1.5">
+              <button
+                type="button"
+                onClick={() => onEdit(row)}
+                className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition duration-200 hover:border-blue-600 hover:text-blue-700 active:scale-95"
+              >
+                Sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(row)}
+                className="inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition duration-200 hover:border-rose-500 active:scale-95"
+              >
+                <Icon name="trash-2" size={12} />
+                Xóa
+              </button>
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             {row.components.length > 0 ? (
@@ -615,9 +693,11 @@ function SubjectsTable({
 function RoomsTable({
   rows,
   onEdit,
+  onDelete,
 }: {
   rows: RoomRow[];
   onEdit: (row: RoomRow) => void;
+  onDelete: (row: RoomRow) => void;
 }) {
   return (
     <>
@@ -643,13 +723,23 @@ function RoomsTable({
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => onEdit(row)}
-              className="mt-3 min-h-11 w-full rounded-lg border border-zinc-300 px-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 active:scale-95"
-            >
-              Sửa
-            </button>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => onEdit(row)}
+                className="min-h-11 flex-1 rounded-lg border border-zinc-300 px-2.5 text-xs font-medium text-zinc-700 transition-colors hover:border-blue-600 hover:text-blue-700 active:scale-95"
+              >
+                Sửa
+              </button>
+              <button
+                type="button"
+                onClick={() => onDelete(row)}
+                className="inline-flex min-h-11 flex-1 items-center justify-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 text-xs font-semibold text-rose-700 transition-colors hover:border-rose-500 active:scale-95"
+              >
+                <Icon name="trash-2" size={13} />
+                Xóa
+              </button>
+            </div>
           </li>
         ))}
         {rows.length === 0 ? (
@@ -689,6 +779,14 @@ function RoomsTable({
                   className="rounded-lg border border-zinc-300 px-2.5 py-1.5 text-xs font-medium text-zinc-700 transition duration-200 hover:border-blue-600 hover:text-blue-700 active:scale-95"
                 >
                   Sửa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onDelete(row)}
+                  className="ml-1.5 inline-flex items-center gap-1 rounded-lg border border-rose-300 bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-700 transition duration-200 hover:border-rose-500 active:scale-95"
+                >
+                  <Icon name="trash-2" size={12} />
+                  Xóa
                 </button>
               </td>
             </tr>
@@ -881,12 +979,14 @@ function ComponentModal({
   subjectName,
   initial,
   saving,
+  onDelete,
   onClose,
   onSubmit,
 }: {
   subjectName: string;
   initial: { code: string; name: string } | null;
   saving: boolean;
+  onDelete?: () => void;
   onClose: () => void;
   onSubmit: (data: { code?: string; name: string }) => void;
 }) {
@@ -921,21 +1021,35 @@ function ComponentModal({
             className={inputClass}
           />
         </Field>
-        <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-500"
-          >
-            Hủy
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
-          >
-            {saving ? "Đang lưu…" : "Lưu"}
-          </button>
+        <div className="flex items-center justify-between gap-2 pt-2">
+          {initial && onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 transition-colors hover:border-rose-500 active:scale-95"
+            >
+              <Icon name="trash-2" size={14} />
+              Xóa phân môn
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:border-zinc-500"
+            >
+              Hủy
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+            >
+              {saving ? "Đang lưu…" : "Lưu"}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>
@@ -1024,6 +1138,81 @@ function RoomModal({
           </button>
         </div>
       </form>
+    </Modal>
+  );
+}
+
+function DeleteModal({
+  target,
+  saving,
+  onClose,
+  onConfirm,
+}: {
+  target: DeleteTarget;
+  saving: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  const info =
+    target.kind === "teacher"
+      ? {
+          title: "Xóa giáo viên",
+          name: `${target.row.fullName} (${target.row.code})`,
+          kind: "Giáo viên",
+        }
+      : target.kind === "subject"
+        ? {
+            title: "Xóa môn học",
+            name: `${target.row.name} (${target.row.code})`,
+            kind: "Môn học",
+          }
+        : target.kind === "component"
+          ? {
+              title: "Xóa phân môn",
+              name: `${target.component.name} (${target.component.code})`,
+              kind: "Phân môn",
+            }
+          : {
+              title: "Xóa phòng học",
+              name: `${target.row.name ?? target.row.code} (${target.row.code})`,
+              kind: "Phòng học",
+            };
+
+  return (
+    <Modal title={info.title} onClose={onClose}>
+      <div className="space-y-4">
+        <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <p className="font-semibold">Thao tác này không thể hoàn tác.</p>
+          <p className="mt-1">
+            {info.kind} <span className="font-semibold">{info.name}</span> sẽ bị
+            xóa khỏi danh mục.
+          </p>
+        </div>
+        <p className="text-xs text-zinc-500">
+          Hệ thống chỉ cho xóa bản ghi <b>chưa từng được dùng</b> trong thời khóa
+          biểu, phân công hoặc dạy thay; nếu đang được dùng, thao tác sẽ bị chặn
+          kèm lý do. Giáo viên nghỉ dạy nên dùng <b>Ngừng dạy</b> thay vì xóa để
+          giữ nguyên lịch sử.
+        </p>
+        <div className="flex justify-end gap-2 pt-1">
+          <button
+            type="button"
+            onClick={onClose}
+            className="min-h-11 rounded-lg border border-zinc-300 px-4 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-50"
+          >
+            Hủy
+          </button>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={onConfirm}
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-rose-700 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-800 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Icon name="trash-2" size={15} />
+            {saving ? "Đang xóa…" : "Xóa vĩnh viễn"}
+          </button>
+        </div>
+      </div>
     </Modal>
   );
 }

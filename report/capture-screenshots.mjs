@@ -231,7 +231,7 @@ await capture({
 
 await capture({
   url: `${BASE}/admin/danh-muc`, cookie: admin, waitMs: 3000,
-  sections: [{ file: "15-catalogs.png", sel: "main table", maxH: 760 }],
+  sections: [{ file: "15-catalogs.png", sel: "table", maxH: 760 }],
 });
 
 await capture({

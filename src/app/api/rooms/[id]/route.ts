@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { requireApiUser, mutationErrorResponse, type Params } from "@/server/api/timetable-api";
-import { updateRoom } from "@/server/services/catalog.service";
+import { updateRoom, deleteRoom } from "@/server/services/catalog.service";
 
 /** PATCH /api/rooms/:id  {name?, roomType?, capacity?} */
 
@@ -29,6 +29,22 @@ export async function PATCH(
   if (!parsed.success) return zodErrorResponse(parsed.error.issues);
   try {
     return NextResponse.json(await updateRoom(id, parsed.data, auth.user));
+  } catch (error) {
+    return mutationErrorResponse(error) ?? internal(error);
+  }
+}
+
+/** DELETE /api/rooms/:id — only when no timetable entry uses it (409 otherwise). */
+export async function DELETE(
+  _request: Request,
+  { params }: Params,
+): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  const { id } = await params;
+  try {
+    await deleteRoom(id, auth.user);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return mutationErrorResponse(error) ?? internal(error);
   }

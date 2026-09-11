@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { errorResponse, zodErrorResponse } from "@/server/api/errors";
 import { requireApiUser, mutationErrorResponse, type Params } from "@/server/api/timetable-api";
-import { updateTeacher } from "@/server/services/catalog.service";
+import { updateTeacher, deleteTeacher } from "@/server/services/catalog.service";
 
 /** PATCH /api/teachers/:id  {fullName?, shortName?, specialty?, position?, isActive?} */
 
@@ -31,6 +31,22 @@ export async function PATCH(
   if (!parsed.success) return zodErrorResponse(parsed.error.issues);
   try {
     return NextResponse.json(await updateTeacher(id, parsed.data, auth.user));
+  } catch (error) {
+    return mutationErrorResponse(error) ?? internal(error);
+  }
+}
+
+/** DELETE /api/teachers/:id — only when never referenced (409 IN_USE otherwise). */
+export async function DELETE(
+  _request: Request,
+  { params }: Params,
+): Promise<NextResponse> {
+  const auth = await requireApiUser();
+  if (!auth.ok) return auth.response;
+  const { id } = await params;
+  try {
+    await deleteTeacher(id, auth.user);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return mutationErrorResponse(error) ?? internal(error);
   }
