@@ -211,6 +211,7 @@ export function AssignmentsApp({ canManage }: { canManage: boolean }) {
 
       {editing && canManage && (
         <AssignmentForm
+          key={editing.id}
           initial={editing}
           teachers={teachers}
           classes={classes}
