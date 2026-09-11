@@ -146,19 +146,23 @@
   </div>
 
   <div class="grid2">
-    <div class="shot-wrap" style="margin:auto">
-      <img class="shot" style="max-width:360px" src="screenshots/02-login.png" alt="Đăng nhập"/>
+    <div class="shot-wrap">
+      <img class="shot" src="screenshots/02-login.png" alt="Đăng nhập"/>
       <p class="shot-cap"><b>Hình 02 — Đăng nhập.</b> Dùng tài khoản do nhà trường cấp. Nhập sai nhiều lần trong thời gian ngắn sẽ bị tạm khóa để chống dò mật khẩu. Đăng nhập xong, hệ thống tự chuyển đến đúng phần việc của mỗi người.</p>
     </div>
-    <div>
-      <h3 style="margin-top:6px">Điểm cần nhớ</h3>
-      <ul class="small">
-        <li>Quên mật khẩu → liên hệ người quản trị để được cấp lại.</li>
-        <li>Trang chủ hiển thị đẹp cả trên điện thoại lẫn máy tính.</li>
-        <li>Có trang Hướng dẫn sử dụng bằng tiếng Việt ngay trong website.</li>
-      </ul>
+    <div class="shot-wrap">
+      <img class="shot" src="screenshots/02b-quen-mat-khau.png" alt="Quên mật khẩu"/>
+      <p class="shot-cap"><b>Hình 02b — Quên mật khẩu.</b> Nhập email đã đăng ký để nhận <b>mã xác nhận gồm 6 chữ số</b> (hiệu lực 10 phút, dùng một lần) rồi đặt mật khẩu mới. Mã chỉ gửi về địa chỉ email trong hồ sơ tài khoản, nên người khác không thể chiếm tài khoản.</p>
     </div>
   </div>
+
+  <h3 style="margin-top:6px">Điểm cần nhớ</h3>
+  <ul class="small">
+    <li>Quên mật khẩu → tự lấy lại qua email: nhập email đã đăng ký, nhận mã xác nhận 6 chữ số, rồi đặt mật khẩu mới (không cần nhờ quản trị).</li>
+    <li>Đổi email liên hệ cũng cần mã xác nhận gửi tới địa chỉ mới — tránh gõ nhầm rồi mất liên lạc.</li>
+    <li>Trang chủ hiển thị đẹp cả trên điện thoại lẫn máy tính.</li>
+    <li>Có trang Hướng dẫn sử dụng bằng tiếng Việt ngay trong website.</li>
+  </ul>
 
   <footer><span>Thời khóa biểu điện tử — Măng Cành</span><span>Trang 3/13</span></footer>
 </section>
@@ -184,7 +188,7 @@
     </div>
     <div class="shot-wrap">
       <img class="shot" src="screenshots/05b-guide-steps.png" alt="Các bước hướng dẫn"/>
-      <p class="shot-cap"><b>Hình 05b — Hướng dẫn từng bước.</b> Viết bằng tiếng Việt dễ hiểu: cách xem lịch, cài app lên điện thoại, bật thông báo, nhập Excel…</p>
+      <p class="shot-cap"><b>Hình 05b — Hướng dẫn từng bước.</b> Bắt đầu từ <b>thiết lập tài khoản lần đầu</b> (email → mật khẩu riêng → nhập mã xác nhận gửi qua email), rồi xem lịch, cài app, bật thông báo…</p>
     </div>
   </div>
 
@@ -414,7 +418,7 @@
   <h3>Kết quả kiểm tra</h3>
   <table>
     <tr><th>Nội dung kiểm tra</th><th>Kết quả</th></tr>
-    <tr><td>Bài kiểm tra tự động của hệ thống</td><td class="ok">137/137 bài đạt</td></tr>
+    <tr><td>Bài kiểm tra tự động của hệ thống</td><td class="ok">155/155 bài đạt</td></tr>
     <tr><td>So khớp 236 tiết của Tuần 01 với bảng tính gốc của trường</td><td class="ok">Khớp 100% — đủ 19 giáo viên, 8 lớp</td></tr>
     <tr><td>100 người mở trang cùng một lúc</td><td class="ok">Tất cả vào được, không ai lỗi</td></tr>
     <tr><td>200 người mở trang cùng một lúc</td><td class="ok">Tất cả vào được</td></tr>
@@ -422,12 +426,14 @@
     <tr><td>Kiểm tra trên điện thoại (toàn bộ trang quản trị &amp; giáo viên)</td><td class="ok">Hiển thị vừa màn hình, không tràn ngang</td></tr>
     <tr><td>Thông báo trên điện thoại (gửi thật, nhận thật)</td><td class="ok">Nhận được, có thông báo đẩy</td></tr>
     <tr><td>Gửi thông báo chung &amp; xóa khỏi toàn bộ người nhận</td><td class="ok">Hoạt động đúng, có kiểm chứng</td></tr>
+    <tr><td>Gửi mã xác nhận qua email (quên mật khẩu, xác nhận email)</td><td class="ok">Gửi thật tới hộp thư nhà trường (SMTP tino.vn) — mã dùng một lần, hết hạn 10 phút</td></tr>
+    <tr><td>Quên mật khẩu: nhập mã sai, mã hết hạn, dùng lại mã</td><td class="ok">Đều bị chặn đúng; đổi mật khẩu xong mọi phiên đăng nhập cũ bị thu hồi</td></tr>
   </table>
   <p class="small muted">Giờ cao điểm (ví dụ 7h sáng cả trường mở ứng dụng cùng lúc): mọi người vẫn vào được, chậm nhất khoảng 2–5 giây ngay lúc đông nhất rồi nhanh trở lại bình thường.</p>
 
   <h3>Khuyến nghị trước khi dùng chính thức</h3>
   <ul class="small">
-    <li><b>Thiết lập tài khoản lần đầu đã được bật sẵn:</b> ở lần đăng nhập đầu tiên, mỗi giáo viên/cán bộ được hệ thống yêu cầu tự nhập email và đặt mật khẩu riêng (3 bước) — không cần đổi mật khẩu dùng thử thủ công nữa. Muốn tự đổi bất cứ lúc nào: <b>Tài khoản của tôi → Đổi mật khẩu</b>.</li>
+    <li><b>Thiết lập tài khoản lần đầu đã được bật sẵn:</b> ở lần đăng nhập đầu tiên, mỗi giáo viên/cán bộ được hệ thống yêu cầu tự nhập email, <b>nhận mã xác nhận qua email</b> và đặt mật khẩu riêng (3 bước) — không cần đổi mật khẩu dùng thử thủ công nữa. Quên mật khẩu tự xử lý được ngay bằng mã gửi qua email. Muốn tự đổi bất cứ lúc nào: <b>Tài khoản của tôi → Đổi mật khẩu</b>.</li>
     <li>Tập huấn nhanh cho giáo viên: cách xem lịch, bật thông báo trên điện thoại (đã có sẵn trang Hướng dẫn trong website).</li>
     <li><b>Để thông báo hiện trên màn hình khóa</b> (Android): Cài đặt → Ứng dụng → chọn app đã cài → Thông báo → đặt mức <b>Khẩn cấp/Cao</b>; đồng thời cho <b>Chrome chạy nền</b> (Pin → Không hạn chế) để thông báo đến cả khi đóng app. Máy Xiaomi/Oppo/Vivo nên bật thêm Tự khởi chạy.</li>
     <li><b>Cài đúng app theo từng khu vực:</b> “Sổ tay học sinh” từ trang /hsv, “TKB Măng Cành” (phụ huynh) từ /tkb, “Lịch dạy” từ /gv, “Quản trị nhà trường” từ /admin, “Ban giám hiệu” từ /bg. Mỗi app chỉ mở đúng khu vực của mình; nút cài của giáo viên/quản trị chỉ hiện sau khi đăng nhập nên học sinh không thể cài nhầm. Gỡ app chung cũ (nếu đã cài) rồi cài lại từ đúng trang.</li>

@@ -145,7 +145,12 @@ await capture({
 
 await capture({
   url: `${BASE}/dang-nhap`, waitMs: 1600,
-  sections: [{ file: "02-login.png", sel: "main", maxH: 640 }],
+  sections: [{ file: "02-login.png", sel: ".relative.w-full.max-w-sm", maxH: 640 }],
+});
+
+await capture({
+  url: `${BASE}/quen-mat-khau`, waitMs: 1600,
+  sections: [{ file: "02b-quen-mat-khau.png", sel: ".relative.w-full.max-w-sm", maxH: 640 }],
 });
 
 await capture({
@@ -162,7 +167,7 @@ await capture({
   url: `${BASE}/huong-dan`, waitMs: 2000,
   sections: [
     { file: "05a-guide-cards.png", sel: "nav[aria-label='Vai trò']", maxH: 480 },
-    { file: "05b-guide-steps.png", sel: "main ol", nth: 0, maxH: 560 },
+    { file: "05b-guide-steps.png", sel: "main ol", nth: 1, maxH: 620 },
   ],
 });
 
