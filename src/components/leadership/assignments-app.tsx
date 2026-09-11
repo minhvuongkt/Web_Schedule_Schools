@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+import { Modal } from "@/components/ui/modal";
 import { Select } from "@/components/ui/select";
 
 interface AssignmentRow {
@@ -376,15 +377,7 @@ function AssignmentForm({
   };
 
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="mb-3 flex items-start justify-between">
-        <h3 className="text-sm font-semibold text-zinc-900">
-          {initial ? "Sửa phân công" : "Thêm phân công"}
-        </h3>
-        <button type="button" onClick={onClose} className="text-xs text-zinc-400 hover:text-zinc-600">
-          Đóng
-        </button>
-      </div>
+    <Modal title={initial ? "Sửa phân công" : "Thêm phân công"} onClose={onClose}>
       {validation && (
         <p className="mb-3 rounded border border-amber-200 bg-amber-50 px-2 py-1 text-xs text-amber-800">
           {validation}
@@ -497,6 +490,6 @@ function AssignmentForm({
           </button>
         )}
       </div>
-    </div>
+    </Modal>
   );
 }
