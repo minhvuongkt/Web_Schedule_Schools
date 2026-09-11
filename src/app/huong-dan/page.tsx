@@ -223,7 +223,9 @@ export default function GuidePage() {
                 <MenuPath>Đánh dấu tất cả đã đọc</MenuPath> hoặc{" "}
                 <MenuPath>Xóa tất cả</MenuPath> (có hỏi xác nhận trước khi xóa).
                 Muốn thông báo hiện trên màn hình khóa, xem mục Câu hỏi thường
-                gặp bên dưới.
+                gặp bên dưới. Nếu lỡ bỏ qua thông báo đẩy, khi mở lại website
+                bạn sẽ thấy <strong>dải nhắc màu vàng</strong> ở đầu trang — bấm
+                “Xem thông báo” để đọc ngay.
               </Step>
               <Step n={5} title="In lịch dạy">
                 Mở trang cần in, bấm tổ hợp <Kbd>Ctrl</Kbd> + <Kbd>P</Kbd> —

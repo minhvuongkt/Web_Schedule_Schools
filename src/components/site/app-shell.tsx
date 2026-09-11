@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 
 import { logoutAction } from "@/app/dang-nhap/actions";
 import { roleLabelVi } from "@/components/leadership/labels";
+import { NotificationAlert } from "@/components/notifications/notification-alert";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { Icon, type IconName } from "@/components/ui/icon";
 import { useScrollLock } from "@/components/ui/use-scroll-lock";
@@ -328,6 +329,7 @@ export function AppShell({
           collapsed ? "lg:pl-16" : "lg:pl-60"
         }`}
       >
+        <NotificationAlert />
         {children}
       </div>
     </div>
